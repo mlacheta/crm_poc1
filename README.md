@@ -30,6 +30,28 @@ Antes de escribir código funcional, el sistema se rige y valida mediante estas 
 
 ---
 
-## 🚀 Pasos Siguientes
+## 🛠️ Desarrollo local (Hito 1)
 
-Revisar y validar los requerimientos y decisiones de arquitectura en las especificaciones para dar inicio a la Fase 1 de implementación del código base.
+**Requisitos**: Node.js 20+ y Docker Desktop.
+
+```bash
+cp .env.example .env     # variables de conexión locales
+npm install              # instala dependencias y genera el cliente Prisma
+npm run db:up            # levanta PostgreSQL 17 + Redis 7 (docker compose)
+npm run db:migrate       # aplica las migraciones
+npm run db:seed          # carga la clínica demo (vacía la base antes)
+npm run dev              # http://localhost:3000
+```
+
+| Script | Descripción |
+| :--- | :--- |
+| `db:up` / `db:down` | Inicia / detiene los contenedores (los datos persisten en volúmenes) |
+| `db:migrate` | `prisma migrate dev` — crea y aplica migraciones a partir de `prisma/schema.prisma` |
+| `db:seed` | Clínica demo: staff, 3 oftalmólogos con horarios y consultorios, 8 pacientes con obras sociales, turnos, pagos y conversaciones |
+| `db:reset` | Borra la base, reaplica migraciones y vuelve a correr el seed |
+| `db:studio` | Abre Prisma Studio para explorar los datos |
+| `typecheck` | Genera los tipos de rutas de Next.js y corre `tsc` |
+
+**Usuarios del seed** (contraseña: `SEED_USER_PASSWORD`, por defecto `lucia1234`): `admin@`, `secretaria@`, `marketing@`, `laura.mendez@`, `martin.rossi@`, `carolina.paz@` — todos `@lucia.local`.
+
+**Stack**: Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · shadcn/ui · Prisma 7 (adapter `pg`) · PostgreSQL 17 · Redis 7.
