@@ -52,6 +52,17 @@ npm run dev              # http://localhost:3000
 | `db:studio` | Abre Prisma Studio para explorar los datos |
 | `typecheck` | Genera los tipos de rutas de Next.js y corre `tsc` |
 
-**Usuarios del seed** (contraseña: `SEED_USER_PASSWORD`, por defecto `lucia1234`): `admin@`, `secretaria@`, `marketing@`, `laura.mendez@`, `martin.rossi@`, `carolina.paz@` — todos `@lucia.local`.
+### Usuarios y vistas (Hito 2)
+
+Ingresá en http://localhost:3000/login. Todos los usuarios del seed son `@lucia.local` con contraseña `SEED_USER_PASSWORD` (por defecto `lucia1234`).
+
+| Usuario | Rol | Vistas |
+| :--- | :--- | :--- |
+| `admin@` | Admin | Todas + Configuración (clínica, credenciales WhatsApp/ARCA, médicos, horarios y aranceles) |
+| `secretaria@` | Secretaría | Pipeline Kanban (drag-and-drop, filtros por médico y canal) e Inbox WhatsApp (pausar/reanudar LUCIA) |
+| `laura.mendez@`, `martin.rossi@`, `carolina.paz@` | Médico | Agenda del día, sus pacientes y ficha rápida con historia clínica |
+| `marketing@` | Marketing | Embudo de conversión y atribución UTM, sólo datos agregados (sin nombres ni diagnósticos) |
+
+El acceso se valida en dos capas: `src/proxy.ts` (redirección optimista por cookie) y `requireUser()` en cada página y server action (`src/lib/auth/dal.ts`). La matriz de permisos vive en `src/lib/auth/roles.ts`.
 
 **Stack**: Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · shadcn/ui · Prisma 7 (adapter `pg`) · PostgreSQL 17 · Redis 7.

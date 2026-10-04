@@ -101,6 +101,7 @@ model DoctorProfile {
   specialty           String                 @default("Oftalmología General")
   appointmentDuration Int                    @default(20) // En minutos
   consultorioNumber   String?
+  consultationFee     Decimal                @default(45000) @db.Decimal(10, 2) // Arancel de consulta particular (ARS)
   createdAt           DateTime               @default(now())
 
   appointments        Appointment[]
