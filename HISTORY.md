@@ -7,7 +7,7 @@
 - Hitos 1, 2, 3 y 3.5 hechos (roadmap: `docs/specs/05_*`). **Próximo: Hito 4** — Mercado Pago + tabla de coberturas (`generate_mercadopago_payment` hoy sólo crea el Payment PENDING).
 - Todo commiteado en `develop`. LUCIA probada con Gemini (free tier): tools OK en reserva, urgencia, guardrail, médico/día, derivación. Free tier = 5 req/min/modelo + 503 frecuentes → no apto producción. Usar `LLM_MODEL=gemini-3.7-flash` (3.8 y flash-latest comparten cuota).
 - Decidido: LUCIA no da consejos de alivio, sólo deriva a consulta (en prompt). Cobro según **tabla de coberturas por obra social y plan** (PRD §4.4.1, spec 03 §3, spec 04 `check_coverage`): especificada, se implementa en Hito 4. Pendiente: reintegro de seña y reglas para estudios/prácticas.
-- Deploy demo: Vercel (gru1) + Neon, guía `docs/deploy.md`. `vercel.json` corre `prisma migrate deploy` en el build; `prisma.config.ts` usa `DATABASE_URL_UNPOOLED` para migraciones. Base remota: `npm run demo:db [-- --seed]` con `.env.demo`. Rama de producción: `main`.
+- Deploy demo **publicado**: https://crm-poc1.vercel.app (Vercel gru1 + Neon sa-east-1, LUCIA mock; probado 2026-10-05). Guía `docs/deploy.md`. `vercel.json` corre `prisma migrate deploy` en el build; `prisma.config.ts` usa `DATABASE_URL_UNPOOLED` para migraciones. Base remota: `npm run demo:db [-- --seed]` con `.env.demo`. Rama de producción: `main`.
 - QA manual por rol en `qa/manual_tests.md` (mantener al agregar funcionalidad).
 
 ## Stack y comandos
