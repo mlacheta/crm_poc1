@@ -83,3 +83,7 @@ El acceso se valida en dos capas: `src/proxy.ts` (redirección optimista por coo
   2. En `.env`: `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_APP_SECRET` y un `WHATSAPP_VERIFY_TOKEN` inventado.
   3. En *Configuración* del CRM, cargar el Phone Number ID de la clínica.
   4. Exponer el puerto local con HTTPS (`cloudflared tunnel --url http://localhost:3000` o `ngrok http 3000`) y configurar en Meta el webhook `https://<túnel>/api/webhooks/whatsapp` con el mismo verify token, suscripto al campo `messages`.
+
+### Deploy de la demo
+
+Vercel + Neon, paso a paso en [`docs/deploy.md`](./docs/deploy.md).

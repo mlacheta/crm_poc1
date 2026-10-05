@@ -42,6 +42,7 @@ next-env.d.ts
 
 # env files: keep the example committed
 !.env.example
+!.env.demo.example
 
 # prisma generated client
 /src/generated/

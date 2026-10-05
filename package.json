@@ -16,7 +16,8 @@
     "db:reset": "prisma migrate reset --force",
     "db:studio": "prisma studio",
     "typecheck": "next typegen && tsc --noEmit",
-    "chat": "tsx scripts/chat.ts"
+    "chat": "tsx scripts/chat.ts",
+    "demo:db": "node scripts/remote-db.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.71",
