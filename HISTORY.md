@@ -5,7 +5,8 @@
 
 ## Estado (2026-10-04)
 - Hitos 1, 2 y 3 hechos (roadmap: `docs/specs/05_*`). **Próximo: Hito 4** — Mercado Pago (Preference + webhook; `generate_mercadopago_payment` hoy sólo crea el Payment PENDING).
-- Todo commiteado en `develop`. Sin API key de LLM todavía: el agente corre en `LLM_PROVIDER=mock`; **el camino con un LLM real no se probó**.
+- Todo commiteado en `develop`. LUCIA probada con Gemini (free tier): tools OK en reserva, urgencia, guardrail, médico/día, derivación. Free tier = 5 req/min/modelo + 503 frecuentes → no apto producción. Usar `LLM_MODEL=gemini-3.7-flash` (3.8 y flash-latest comparten cuota).
+- Decisiones pendientes del usuario: ¿LUCIA da consejos de alivio (lágrimas, compresas) o sólo deriva? ¿Qué se cobra a pacientes con obra social (seña/copago/nada)? → define Hito 4.
 - QA manual por rol en `qa/manual_tests.md` (mantener al agregar funcionalidad).
 
 ## Stack y comandos
