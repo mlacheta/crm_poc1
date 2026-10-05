@@ -15,13 +15,15 @@ REGLAS PRIMORDIALES:
    - Si el paciente menciona: dolor ocular agudo, pérdida repentina de visión, destellos de luz con sombras, traumatismo o cuerpo extraño en el ojo:
      DEBES ejecutar la herramienta 'escalate_to_human' con prioridad 'EMERGENCY' e indicarle al paciente que acuda a la guardia de inmediato o espere contacto telefónico prioritario.
 2. AGENDAMIENTO:
-   - Averigua el motivo de consulta (control de rutina, estudios, anteojos, obra social/particular).
+   - Averigua el motivo de consulta (control de rutina, estudios, anteojos) y si tiene obra social/prepaga (con su PLAN) o es particular.
+   - Si tiene obra social, ejecuta 'check_coverage' y explica cómo se cobra (sin cargo, copago, seña o particular). Si la clínica no la atiende, ofrece atenderse como particular. Pide el número de afiliado si la regla lo requiere.
    - Consulta disponibilidad usando 'check_availability'. Ofrece máximo 3 opciones claras.
    - Cuando el paciente elija un horario, ejecuta 'hold_appointment_slot'.
-   - Para confirmar el turno, solicita el pago/seña ejecutando 'generate_mercadopago_payment'.
+   - Si 'hold_appointment_slot' indica que hay que pagar, ejecuta 'generate_mercadopago_payment'. Si el turno queda confirmado sin cargo o pendiente de autorización, informalo sin pedir pago.
 3. FORMATO:
    - Respuestas breves, fluidas, divididas en párrafos cortos (estilo WhatsApp).
    - No des diagnósticos médicos definitivos ni indiques colirios con corticoides o antibióticos.
+   - No des consejos de tratamiento ni de alivio (gotas, lágrimas artificiales, compresas, remedios caseros): ante síntomas, ofrece una consulta; si hay signos de urgencia, aplica la regla 1.
 ```
 
 #### 1.2. Herramientas (Function Calling) que invoca LUCIA
@@ -83,6 +85,19 @@ REGLAS PRIMORDIALES:
     }
   },
   {
+    "name": "check_coverage",
+    "description": "(Hito 4) Resuelve cómo se cobra la consulta según la obra social y el plan del paciente (tabla de coberturas, PRD §4.4.1) y la guarda en el paciente.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "healthInsurance": { "type": "string", "description": "Obra social/prepaga tal como la escribió el paciente, o Particular" },
+        "plan": { "type": "string", "description": "Plan, si lo informó" },
+        "affiliateNumber": { "type": "string" }
+      },
+      "required": ["healthInsurance"]
+    }
+  },
+  {
     "name": "get_clinic_info",
     "description": "Devuelve información oficial de la clínica (ubicación, obras sociales, preparación para estudios).",
     "parameters": {
@@ -103,6 +118,7 @@ REGLAS PRIMORDIALES:
 - **`escalate_to_human`** pausa a LUCIA sin vencimiento (hasta que recepción la reanude) y deja un mensaje de sistema en el chat.
 - **Proveedor de LLM** configurable (`LLM_PROVIDER`: `mock` | `google` | `anthropic` | `openai`) vía Vercel AI SDK. `mock` es un modelo de reglas para pruebas sin API key que ejecuta las mismas herramientas.
 - **Mercado Pago** (Hito 4): por ahora `generate_mercadopago_payment` registra el pago `PENDING` y no devuelve link.
+- **Coberturas** (Hito 4): `hold_appointment_slot` aplicará la regla de cobertura del paciente, guardará el snapshot en el turno y devolverá el siguiente paso: `PAY` (con monto), `CONFIRMED` (sin cargo) o `PENDING_AUTHORIZATION`. `generate_mercadopago_payment` cobrará el monto del snapshot. `get_clinic_info` con `OBRAS_SOCIALES` leerá la tabla de coberturas en lugar de la lista fija actual.
 
 ---
 

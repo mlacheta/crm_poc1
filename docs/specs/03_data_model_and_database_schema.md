@@ -12,6 +12,11 @@ erDiagram
     CLINIC ||--o{ PATIENT : manages
     CLINIC ||--o{ APPOINTMENT : hosts
     CLINIC ||--o{ INVOICE_CONFIG : configures
+    CLINIC ||--o{ HEALTH_INSURANCE : accepts
+
+    HEALTH_INSURANCE ||--o{ HEALTH_INSURANCE_PLAN : offers
+    HEALTH_INSURANCE_PLAN ||--o{ PATIENT : covers
+    HEALTH_INSURANCE_PLAN ||--o{ APPOINTMENT : prices
 
     USER ||--o| DOCTOR_PROFILE : is
     
@@ -347,3 +352,64 @@ model ReviewRequest {
   clicked         Boolean  @default(false)
 }
 ```
+
+---
+
+### 3. Coberturas por Obra Social y Plan (pendiente de implementar — Hito 4)
+
+Implementa las reglas de cobro del PRD §4.4.1. Se agrega al esquema de la sección 2 cuando se implemente.
+
+```prisma
+enum CoverageBillingMode {
+  SIN_CARGO  // La cobertura incluye la consulta: no se cobra
+  COPAGO     // Se cobra un monto fijo al paciente
+  SENA       // Se cobra una seña para confirmar el turno
+  PARTICULAR // La cobertura no incluye la consulta: se cobra el arancel particular del médico
+  NO_ATIENDE // La clínica no atiende esa obra social/plan
+}
+
+model HealthInsurance {
+  id       String   @id @default(uuid())
+  clinicId String
+  clinic   Clinic   @relation(fields: [clinicId], references: [id])
+  name     String   // Nombre oficial: "OSDE", "Swiss Medical", "PAMI"
+  aliases  String[] // Variantes que escribe el paciente: "osde", "o.s.d.e", "swiss"
+  isActive Boolean  @default(true)
+
+  plans HealthInsurancePlan[]
+
+  @@unique([clinicId, name])
+}
+
+model HealthInsurancePlan {
+  id                      String              @id @default(uuid())
+  healthInsuranceId       String
+  healthInsurance         HealthInsurance     @relation(fields: [healthInsuranceId], references: [id])
+  name                    String              // "210", "310"… o "*" = todos los planes sin fila propia
+  billingMode             CoverageBillingMode
+  amount                  Decimal?            @db.Decimal(10, 2) // Monto del copago o la seña (null en el resto)
+  requiresAuthorization   Boolean             @default(false)
+  requiresAffiliateNumber Boolean             @default(true)
+  notes                   String?             // Indicaciones para recepción y LUCIA
+  isActive                Boolean             @default(true)
+  updatedAt               DateTime            @updatedAt
+
+  patients     Patient[]
+  appointments Appointment[]
+
+  @@unique([healthInsuranceId, name])
+}
+```
+
+Cambios en modelos existentes:
+
+| Modelo | Campo nuevo | Uso |
+| :--- | :--- | :--- |
+| `Clinic` | `healthInsurances HealthInsurance[]` | Tabla de coberturas de la clínica. |
+| `Clinic` | `authorizationHoldHours Int @default(24)` | Retención del turno mientras recepción valida una autorización. |
+| `Patient` | `healthInsurancePlanId String?` + relación | Plan resuelto. `healthInsurance` y `affiliateNumber` quedan como texto declarado por el paciente. `null` = particular o no resuelto. |
+| `Appointment` | `coveragePlanId String?` + relación | Fila de la tabla usada al reservar. |
+| `Appointment` | `billingMode CoverageBillingMode?` | Snapshot de la modalidad aplicada. |
+| `Appointment` | `patientAmount Decimal? @db.Decimal(10, 2)` | Snapshot del monto a cobrar (0 en `SIN_CARGO`). |
+
+Resolución de la regla (en este orden): plan exacto de la obra social → fila `*` de la obra social → obra social desconocida (no se promete cobertura). Sin obra social: `PARTICULAR` con `DoctorProfile.consultationFee`.

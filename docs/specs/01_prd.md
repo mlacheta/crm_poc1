@@ -41,7 +41,7 @@ Automatiza el ciclo completo del paciente: desde la captación multicanal (tráf
    - Reporte de pacientes reactivados vs. perdidos.
 
 4. **Administrador / Dueño de Clínica**:
-   - Configuración de médicos, agendas, consultorios, obras sociales / particulares, tarifas.
+   - Configuración de médicos, agendas, consultorios, tarifas y la tabla de coberturas por obra social y plan (ver 4.4.1).
    - Integración fiscal ARCA (Certificado digital, Punto de Venta, tipo de factura B/C).
    - Facturación consolidada y reportes financieros (Mercado Pago reconciliado).
 
@@ -52,6 +52,7 @@ Automatiza el ciclo completo del paciente: desde la captación multicanal (tráf
 #### 4.1. Agente Conversacional WhatsApp (LUCIA AI)
 - **Atención Inbound 24/7**:
   - Detección de intención del paciente: Solicitar turno, consultar precio, pedir información de estudios (ej. fondo de ojo, refracción, campo visual, topografía), ubicación, obras sociales aceptadas.
+  - LUCIA no da consejos de tratamiento ni de alivio (gotas, lágrimas artificiales, compresas, remedios caseros): ante síntomas sólo ofrece una consulta, o aplica el triage si hay signos de urgencia.
   - Triage inteligente: Detecta urgencias oftalmológicas (pérdida súbita de visión, dolor agudo, trauma ocular, destellos/cuerpos extraños) y deriva con alerta prioritaria a guardia/recepción humana.
 - **Flujo de Agendamiento Inteligente**:
   - Consulta disponibilidad de slots en tiempo real.
@@ -85,6 +86,35 @@ Automatiza el ciclo completo del paciente: desde la captación multicanal (tráf
   - Se confirma el turno de forma definitiva.
   - Se gatilla la emisión de la factura electrónica si está configurada la facturación automática.
   - Se envía mensaje de confirmación con fecha, hora, ubicación en Google Maps e instrucciones previas (ej. "venir sin lentes de contacto si es para graduación", "acompañado si incluye dilatación pupilar").
+
+#### 4.4.1. Reglas de Cobro por Obra Social y Plan
+El monto a cobrar (o si no se cobra) depende de la cobertura del paciente. La clínica mantiene una **tabla de coberturas**, editable por el Administrador, con una fila por obra social/prepaga y plan:
+
+| Campo | Descripción |
+| :--- | :--- |
+| Obra social / prepaga | Ej. OSDE, Swiss Medical, PAMI. Incluye variantes de escritura ("o.s.d.e") para reconocer lo que escribe el paciente. |
+| Plan | Ej. "210", "310". El valor "Todos los planes" aplica a cualquier plan sin fila propia. |
+| Modalidad de cobro | Ver tabla siguiente. |
+| Monto | Copago o seña en ARS (sólo para esas modalidades). |
+| Requiere autorización previa | Si es "sí", recepción valida la credencial/autorización antes de confirmar el turno. |
+| Requiere n° de afiliado | Si es "sí", LUCIA lo pide antes de reservar. |
+| Notas | Indicaciones para recepción y LUCIA (ej. "traer orden médica"). |
+| Activa | Permite desactivar una fila sin borrarla. |
+
+| Modalidad | Qué informa LUCIA | Cobro | Confirmación del turno |
+| :--- | :--- | :--- | :--- |
+| `SIN_CARGO` | La consulta está cubierta. | Ninguno. | Inmediata al reservar (o tras la validación de recepción si requiere autorización). |
+| `COPAGO` | Monto del copago. | Link de Mercado Pago por el copago. | Al aprobarse el pago. |
+| `SENA` | Monto de la seña para retener el turno. | Link de Mercado Pago por la seña. | Al aprobarse el pago. |
+| `PARTICULAR` | La cobertura no incluye la consulta; se atiende como particular. | Link por el arancel particular del médico. | Al aprobarse el pago. |
+| `NO_ATIENDE` | La clínica no atiende esa obra social/plan; ofrece atenderse como particular. | — (si acepta particular, se aplica `PARTICULAR`). | — |
+
+Reglas:
+- **Resolución:** se busca la fila de la obra social con el plan exacto; si no existe, la fila "Todos los planes" de esa obra social. Si la obra social no está en la tabla, LUCIA **no promete cobertura**: ofrece atenderse como particular o deriva a recepción.
+- **Sin obra social (particular):** se cobra el arancel particular del médico.
+- **Requiere autorización:** el turno queda en reserva tentativa durante un plazo configurable por clínica (por defecto 24 h, en lugar de los 15 min del pago) y recepción lo confirma o rechaza desde el CRM. LUCIA le explica al paciente que recepción se va a comunicar.
+- **Snapshot:** el turno guarda la modalidad y el monto aplicados al reservarlo; cambios posteriores en la tabla no alteran turnos ya reservados.
+- **Pendiente de definir:** política de reintegro de la seña, y si estudios y prácticas (no consultas) tienen reglas de cobertura distintas.
 
 #### 4.5. Facturación Fiscal Electrónica (ARCA / ex-AFIP)
 - Conexión vía Web Service de Facturación Electrónica (WSFEv1).

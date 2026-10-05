@@ -53,6 +53,7 @@ gantt
 - Orquestador de Agente con LangChain / Vercel AI SDK y Tool Calling hacia el motor de turnos.
 
 #### Hito 4: Pasarela de Cobros Mercado Pago
+- Tabla de coberturas por obra social y plan (PRD §4.4.1, spec 03 §3): ABM en Configuración, herramienta `check_coverage` de LUCIA y monto del turno según la modalidad (sin cargo, copago, seña, particular).
 - Generador de preferencias con expiración de 15 minutos (lock de slot).
 - Endpoint receptor de Webhook de Mercado Pago con verificación de firma criptográfica.
 - Actualización automática del estado del turno y notificación instantánea en el CRM.
