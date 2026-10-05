@@ -86,4 +86,4 @@ El acceso se valida en dos capas: `src/proxy.ts` (redirección optimista por coo
 
 ### Deploy de la demo
 
-Vercel + Neon, paso a paso en [`docs/deploy.md`](./docs/deploy.md).
+Vercel + Neon, paso a paso en [`docs/deploy.md`](./docs/deploy.md). Para conectar el número real de WhatsApp de la clínica: [`docs/whatsapp-produccion.md`](./docs/whatsapp-produccion.md).

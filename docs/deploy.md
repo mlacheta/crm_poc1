@@ -59,4 +59,4 @@ Cada push a `main` despliega automáticamente. Si el push incluye migraciones nu
 
 - **Plan de Vercel:** el plan Hobby (gratis) es para uso personal y no comercial. Para mostrar el producto a clientes de forma sostenida corresponde el plan Pro.
 - **LUCIA con IA real:** cambiar `LLM_PROVIDER` a `google` y agregar `GOOGLE_GENERATIVE_AI_API_KEY` (y `LLM_MODEL=gemini-3.7-flash`) en Vercel, luego redeploy. Ver los límites del plan gratuito en `HISTORY.md`.
-- **WhatsApp real (más adelante):** el webhook queda en `https://<tu-url>/api/webhooks/whatsapp`; ver README, sección Hito 3.
+- **WhatsApp real (más adelante):** guía completa en [`whatsapp-produccion.md`](./whatsapp-produccion.md).
