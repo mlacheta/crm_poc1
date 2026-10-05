@@ -25,7 +25,9 @@ export const getCurrentUser = cache(async () => {
       doctorProfile: { select: { id: true } },
     },
   });
-  if (!user || !user.isActive) return null;
+  // Si cambió el rol o la clínica desde el login, la cookie quedó desactualizada: se exige volver a ingresar
+  // (proxy.ts decide con el rol de la cookie y no debe contradecir a la base).
+  if (!user || !user.isActive || user.role !== session.role || user.clinicId !== session.clinicId) return null;
   return user;
 });
 

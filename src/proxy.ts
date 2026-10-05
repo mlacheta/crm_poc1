@@ -8,9 +8,9 @@ export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
 
-  if (pathname === "/login") {
-    return session ? NextResponse.redirect(new URL(homeFor(session.role), req.nextUrl)) : NextResponse.next();
-  }
+  // /login no redirige por cookie: una cookie válida de un usuario borrado o inactivo generaría un bucle
+  // con requireUser(). La página de login verifica contra la base.
+  if (pathname === "/login") return NextResponse.next();
   if (!session) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }

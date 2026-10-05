@@ -5,7 +5,7 @@
 
 ## Estado (2026-10-04)
 - Hitos 1 y 2 hechos (roadmap: `docs/specs/05_*`). **Próximo: Hito 3** — agente LUCIA + WhatsApp Cloud API.
-- Todo commiteado en `develop`.
+- Todo commiteado en `develop`. Casos de prueba manuales por rol en `qa/manual_tests.md` (mantener al agregar funcionalidad).
 
 ## Stack y comandos
 Next 16 (App Router, `src/proxy.ts` = ex-middleware) · TS · Tailwind 4 · shadcn (base-ui, no radix) · Prisma 7.10 (fijado; npm "latest" es una 8.0 rc rota) con `@prisma/adapter-pg` · Postgres 17 + Redis 7 en `docker-compose.yml`.
@@ -13,6 +13,7 @@ Next 16 (App Router, `src/proxy.ts` = ex-middleware) · TS · Tailwind 4 · shad
 
 ## Decisiones
 - Auth: JWT HS256 en cookie `lucia_session` (`SESSION_SECRET` en `.env`). Doble chequeo: `proxy.ts` (optimista) + `requireUser(roles)` en cada página/server action (`src/lib/auth/dal.ts`). Permisos por sección en `src/lib/auth/roles.ts`.
+  `proxy.ts` no redirige desde `/login` y la sesión se invalida si cambió rol/clínica/activo (evita bucles).
 - PHI: Secretaría no ve `reason`; Marketing sólo agregados (sin nombres). Médico sólo ve pacientes con turno suyo.
 - Fechas: siempre hora AR (UTC-3) vía `src/lib/dates.ts`; formatos en `src/lib/format.ts` (24h).
 - Kanban: 8 columnas PRD agrupan etapas del enum; al soltar se usa `dropStage` (`src/lib/pipeline.ts`).
