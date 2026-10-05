@@ -96,6 +96,14 @@ REGLAS PRIMORDIALES:
 ]
 ```
 
+#### 1.3. Notas de implementación (Hito 3)
+
+- **Contexto inyectado, no provisto por el modelo**: `hold_appointment_slot` no recibe `patientPhone` y `generate_mercadopago_payment` no recibe `amount`. El paciente sale de la conversación y el monto del arancel del médico (`DoctorProfile.consultationFee`), para que el LLM no pueda operar sobre otro paciente ni cambiar el precio.
+- **Anti doble-booking**: la reserva corre en una transacción `Serializable` de PostgreSQL que recalcula los turnos libres; de dos pedidos simultáneos del mismo turno sólo uno lo obtiene. Una reserva nueva libera las tentativas previas del mismo paciente.
+- **`escalate_to_human`** pausa a LUCIA sin vencimiento (hasta que recepción la reanude) y deja un mensaje de sistema en el chat.
+- **Proveedor de LLM** configurable (`LLM_PROVIDER`: `mock` | `google` | `anthropic` | `openai`) vía Vercel AI SDK. `mock` es un modelo de reglas para pruebas sin API key que ejecuta las mismas herramientas.
+- **Mercado Pago** (Hito 4): por ahora `generate_mercadopago_payment` registra el pago `PENDING` y no devuelve link.
+
 ---
 
 ### 2. Integración WhatsApp (Meta Cloud API) y Políticas de Ventana 24h

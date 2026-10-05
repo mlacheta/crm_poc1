@@ -4,6 +4,7 @@ import type { Role } from "@/generated/prisma/enums";
 export const SECTIONS = [
   { href: "/pipeline", label: "Pipeline", roles: ["ADMIN", "SECRETARIA"] },
   { href: "/inbox", label: "Inbox WhatsApp", roles: ["ADMIN", "SECRETARIA"] },
+  { href: "/simulador", label: "Simulador LUCIA", roles: ["ADMIN", "SECRETARIA"] },
   { href: "/agenda", label: "Agenda", roles: ["ADMIN", "MEDICO"] },
   { href: "/pacientes", label: "Pacientes", roles: ["ADMIN", "MEDICO"] },
   { href: "/marketing", label: "Marketing", roles: ["ADMIN", "MARKETING"] },

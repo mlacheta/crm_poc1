@@ -140,6 +140,7 @@ async function main() {
       cuit: "30-71234567-1",
       address: "Av. Santa Fe 1234, Piso 3, CABA",
       phone: "+541148001234",
+      whatsappNumberId: "100000000000001", // ficticio: permite probar el webhook localmente
       invoiceConfig: {
         create: {
           puntoDeVenta: 4,

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SIMULATOR_UTM_SOURCE } from "@/lib/simulator";
 import { requireUser } from "@/lib/auth/dal";
 import { addDays, arDateTime, arToday } from "@/lib/dates";
 import { formatARS, formatPct } from "@/lib/format";
@@ -28,7 +29,12 @@ export default async function MarketingPage({ searchParams }: PageProps<"/market
 
   // Sólo se seleccionan campos agregables: Marketing no accede a nombres ni diagnósticos (spec 02 §4.2).
   const leads = await prisma.patient.findMany({
-    where: { clinicId: user.clinicId, ...(since && { createdAt: { gte: since } }) },
+    where: {
+      clinicId: user.clinicId,
+      // Los pacientes del simulador son datos de prueba: no cuentan en las métricas.
+      OR: [{ utmSource: null }, { utmSource: { not: SIMULATOR_UTM_SOURCE } }],
+      ...(since && { createdAt: { gte: since } }),
+    },
     select: {
       utmSource: true,
       appointments: { select: { status: true, payment: { select: { status: true, amount: true } } } },

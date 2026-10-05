@@ -49,6 +49,7 @@ export const UTM_LABELS: Record<string, string> = {
   instagram: "Meta Ads (Instagram)",
   google_ads: "Google Ads",
   organic: "Orgánico",
+  simulador: "Simulador (prueba)",
 };
 
 export const utmLabel = (source: string | null) => (source ? (UTM_LABELS[source] ?? source) : "Sin atribución");

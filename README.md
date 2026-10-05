@@ -66,3 +66,20 @@ Ingresá en http://localhost:3000/login. Todos los usuarios del seed son `@lucia
 El acceso se valida en dos capas: `src/proxy.ts` (redirección optimista por cookie) y `requireUser()` en cada página y server action (`src/lib/auth/dal.ts`). La matriz de permisos vive en `src/lib/auth/roles.ts`.
 
 **Stack**: Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · shadcn/ui · Prisma 7 (adapter `pg`) · PostgreSQL 17 · Redis 7.
+
+### Agente LUCIA y WhatsApp (Hito 3)
+
+- **Simulador** (menú *Simulador LUCIA*, Admin y Secretaría): chateá como paciente y mirá qué herramientas ejecuta LUCIA y cómo cambia el CRM. Nunca envía mensajes a Meta. Desde la terminal: `npm run chat -- "Hola, quiero un turno" "1"`.
+- **Modelo**: `LLM_PROVIDER=mock` (por defecto) responde con reglas por palabras clave, sin IA, pero ejecuta las herramientas reales. Para un modelo real, en `.env`:
+
+  | Proveedor | Variables | Modelo por defecto |
+  | :--- | :--- | :--- |
+  | Gemini | `LLM_PROVIDER=google` + `GOOGLE_GENERATIVE_AI_API_KEY` | `gemini-3.8-flash` |
+  | Claude | `LLM_PROVIDER=anthropic` + `ANTHROPIC_API_KEY` | `claude-haiku-4-5` |
+  | OpenAI | `LLM_PROVIDER=openai` + `OPENAI_API_KEY` + `LLM_MODEL` | — |
+
+- **Conectar un número real de WhatsApp**:
+  1. En Meta for Developers, crear una app con el producto WhatsApp y copiar el *Phone Number ID*, el *token de acceso* y el *App Secret*.
+  2. En `.env`: `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_APP_SECRET` y un `WHATSAPP_VERIFY_TOKEN` inventado.
+  3. En *Configuración* del CRM, cargar el Phone Number ID de la clínica.
+  4. Exponer el puerto local con HTTPS (`cloudflared tunnel --url http://localhost:3000` o `ngrok http 3000`) y configurar en Meta el webhook `https://<túnel>/api/webhooks/whatsapp` con el mismo verify token, suscripto al campo `messages`.

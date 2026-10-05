@@ -1,4 +1,4 @@
-# Casos de prueba manuales — LUCIA CRM (Hitos 1 y 2)
+# Casos de prueba manuales — LUCIA CRM (Hitos 1 a 3)
 
 ## Preparación
 
@@ -65,13 +65,13 @@
 
   | Rol | Secciones visibles |
   | :--- | :--- |
-  | Admin | Pipeline, Inbox WhatsApp, Agenda, Pacientes, Marketing, Configuración |
-  | Secretaría | Pipeline, Inbox WhatsApp |
+  | Admin | Pipeline, Inbox WhatsApp, Simulador LUCIA, Agenda, Pacientes, Marketing, Configuración |
+  | Secretaría | Pipeline, Inbox WhatsApp, Simulador LUCIA |
   | Médico | Agenda, Pacientes |
   | Marketing | Marketing |
 
 **PERM-02 · Acceso directo por URL a secciones no permitidas**
-- Pasos: con cada rol, escribir en la barra `/pipeline`, `/inbox`, `/agenda`, `/pacientes`, `/marketing`, `/admin` y `/admin/medicos/nuevo`.
+- Pasos: con cada rol, escribir en la barra `/pipeline`, `/inbox`, `/simulador`, `/agenda`, `/pacientes`, `/marketing`, `/admin` y `/admin/medicos/nuevo`.
 - Esperado: las secciones permitidas abren; las demás redirigen al inicio del rol, sin mostrar contenido ni un error.
 
 **PERM-03 · Sección activa resaltada**
@@ -213,6 +213,7 @@ Usuario: `secretaria@lucia.local`. **Ejecutar dentro de los 30 min posteriores a
   - El campo de texto se vacía.
   - LUCIA queda pausada 30 min.
   - Néstor sube al primer lugar de la lista, con su mensaje como extracto.
+  - Sin `WHATSAPP_ACCESS_TOKEN` en `.env` aparece el aviso "Mensaje guardado pero NO enviado por WhatsApp: Falta WHATSAPP_ACCESS_TOKEN en .env."
 
 **SEC-INBOX-07 · Mensaje vacío**
 - Pasos: tocar Enviar con el campo vacío; después escribir sólo espacios y Enviar.
@@ -232,7 +233,7 @@ Usuario: `secretaria@lucia.local`. **Ejecutar dentro de los 30 min posteriores a
 
 **SEC-INBOX-11 · Aviso de envío**
 - Pasos: leer el texto debajo del cuadro de mensaje.
-- Esperado: indica que LUCIA se pausa 30 min y que el envío real por WhatsApp se conecta en el Hito 3. Ningún mensaje llega al celular del paciente.
+- Esperado: indica que LUCIA se pausa 30 min y que el mensaje "Se envía por WhatsApp al paciente". En conversaciones del simulador dice "Conversación del simulador: no se envía a WhatsApp."
 
 ---
 
@@ -376,7 +377,7 @@ Usuario: `marketing@lucia.local`. Ejecutar el mismo día del seed (la antigüeda
 Usuario: `admin@lucia.local`.
 
 **ADM-01 · Acceso total**
-- Pasos: recorrer las 6 secciones del menú.
+- Pasos: recorrer las 7 secciones del menú.
 - Esperado: todas abren. Pipeline e Inbox funcionan igual que para Secretaría y Marketing igual que para Marketing.
 
 **ADM-02 · Agenda con selector de médico**
@@ -460,6 +461,142 @@ Usuario: `admin@lucia.local`.
 **GEN-03 · Recarga de datos demo**
 - Pasos: después de cualquier suite, `npm run db:seed`, cerrar sesión y volver a ingresar.
 - Esperado: todo vuelve al estado inicial descrito en SEC-PIPE-01 y MKT-02.
+
+---
+
+## 10. Simulador LUCIA (Admin y Secretaría)
+
+Usuario: `secretaria@lucia.local`. Con `LLM_PROVIDER=mock` (por defecto) LUCIA responde con reglas por palabras clave; los resultados esperados de esta sección asumen ese modo. Con un modelo real los textos varían, pero las herramientas y los cambios en el CRM deben ser los mismos.
+
+**SIM-01 · Pantalla inicial**
+- Pasos: abrir **Simulador LUCIA**.
+- Esperado: el título "Simulador de WhatsApp", la etiqueta "Modelo: mock/reglas-v1", el botón "Nueva conversación", el aviso del modo mock y "Todavía no hay conversaciones".
+
+**SIM-02 · Nueva conversación**
+- Pasos: tocar **Nueva conversación**.
+- Esperado: la URL pasa a `/simulador?tel=%2B54900000XXXXXX`, se ve el número de prueba arriba del chat y el panel dice "El paciente se crea con el primer mensaje."
+
+**SIM-03 · Saludo**
+- Pasos: escribir "Hola" y apretar Enter.
+- Esperado:
+  - Mientras espera aparecen el mensaje enviado y "LUCIA está escribiendo…".
+  - LUCIA se presenta y ofrece ayuda.
+  - En el panel, la etapa queda en "Conversando con IA".
+
+**SIM-04 · Pedir turno**
+- Pasos: tocar el atajo "Hola, quiero sacar un turno".
+- Esperado:
+  - LUCIA ofrece 3 turnos numerados, con día, hora, médico y precio.
+  - Debajo de la respuesta aparece `🔧 check_availability`; al abrirlo se ven el input y el output.
+  - Los turnos ofrecidos son futuros (al menos 1 h desde ahora), están dentro del horario del médico y no se superponen con turnos ya ocupados (ej. Sofía Gómez con Méndez).
+
+**SIM-05 · Elegir turno**
+- Pasos: tocar el atajo "1".
+- Esperado:
+  - Se ejecutan `hold_appointment_slot` y `generate_mercadopago_payment`.
+  - LUCIA confirma la reserva con día, hora, médico y valor, y avisa que recepción enviará el link de pago.
+  - En el panel: etapa "Pendiente de pago" y, en Turnos, "Reserva tentativa hasta HH:MM (ahora + 15 min) · pago pending".
+
+**SIM-06 · Turno visible en el CRM**
+- Pasos: con el turno de SIM-05, abrir **Pipeline** y, como admin, la **Agenda** de ese médico en ese día.
+- Esperado:
+  - En el Pipeline, el número de prueba está en "Pendiente de pago" con la etiqueta de canal "Simulador (prueba)".
+  - En la Agenda aparece el turno como "Reserva tentativa", con el motivo "Consulta solicitada por WhatsApp".
+
+**SIM-07 · El turno reservado deja de ofrecerse**
+- Pasos: abrir otra **Nueva conversación** y pedir turno.
+- Esperado: el horario reservado en SIM-05 ya no aparece entre las opciones.
+
+**SIM-08 · Reserva vencida libera el turno**
+- Pasos: en `npm run db:studio`, poner en el pasado el `lockedUntil` del turno de SIM-05. Pedir turno desde otra conversación nueva.
+- Esperado: ese horario vuelve a ofrecerse.
+
+**SIM-09 · Urgencia oftalmológica**
+- Pasos: en una conversación nueva, tocar "Veo destellos y como una cortina negra en un ojo".
+- Esperado:
+  - Se ejecuta `🔧 escalate_to_human` y aparece el mensaje de sistema "Derivado a recepción (EMERGENCY): …".
+  - LUCIA indica ir a la guardia; **no** ofrece turnos.
+  - Panel: etapa "Derivado a humano" y LUCIA "Pausada (derivada a recepción)".
+
+**SIM-10 · LUCIA pausada no responde**
+- Pasos: después de SIM-09, escribir "hola? sigue ahí?".
+- Esperado: el mensaje se guarda, LUCIA no responde y se ve el aviso de que está pausada.
+
+**SIM-11 · Reanudar desde el simulador**
+- Pasos: tocar **Reanudar LUCIA** en el panel y escribir "Hola".
+- Esperado: el panel dice "Activa" y LUCIA vuelve a responder.
+
+**SIM-12 · Pedir una persona**
+- Pasos: en una conversación nueva, tocar "Quiero hablar con una persona".
+- Esperado: `escalate_to_human` con nivel LOW; LUCIA avisa que responderá alguien del equipo; queda pausada.
+
+**SIM-13 · Preguntas frecuentes**
+- Pasos: en una conversación, tocar uno por uno "¿Atienden por OSDE?", "¿Cuánto sale la consulta?", "¿Cómo me preparo para un fondo de ojo?" y "¿Dónde quedan?".
+- Esperado: cada respuesta usa `🔧 get_clinic_info` y muestra, respectivamente:
+  - la lista de obras sociales;
+  - el precio por médico (Méndez $ 45.000, Rossi $ 60.000, Paz $ 50.000);
+  - la preparación de cada estudio (fondo de ojo: venir acompañado, no manejar);
+  - la dirección y el teléfono de la clínica (los de Admin → Configuración).
+
+**SIM-14 · Conversación del simulador en el Inbox**
+- Pasos: abrir **Inbox WhatsApp**.
+- Esperado:
+  - Las conversaciones del simulador tienen la etiqueta "Simulador" (en la lista y en la cabecera).
+  - Las respuestas de LUCIA muestran las herramientas usadas.
+  - Al responder como recepción, el aviso dice "no se envía a WhatsApp" y no aparece ningún error de envío.
+
+**SIM-15 · Marketing no cuenta datos de prueba**
+- Pasos: como admin, abrir **Marketing** en "Todo".
+- Esperado: los números son los mismos que antes de usar el simulador y no hay fila "Simulador" en la tabla por canal.
+
+**SIM-16 · Borrar datos de prueba**
+- Pasos: en **Simulador LUCIA** (sin conversación abierta), tocar **Borrar todos los datos de prueba**.
+- Esperado: la lista queda vacía y los pacientes de prueba desaparecen del Pipeline, del Inbox y de las agendas. Los pacientes reales no se tocan.
+
+**SIM-17 · Acceso**
+- Pasos: como médico o marketing, abrir `/simulador`.
+- Esperado: redirige al inicio del rol.
+
+**SIM-18 · Probar desde la terminal (opcional)**
+- Pasos: `npm run chat -- "Hola, quiero un turno" "2"`.
+- Esperado: imprime cada respuesta de LUCIA con las herramientas ejecutadas y, al final, la etapa `PENDIENTE_PAGO` y el turno `TENTATIVE_LOCKED`.
+
+---
+
+## 11. Webhook de WhatsApp (técnico)
+
+Requiere `WHATSAPP_VERIFY_TOKEN` y `WHATSAPP_APP_SECRET` en `.env` y que la clínica tenga Phone Number ID (el seed carga `100000000000001`). Se prueba con `curl` o Postman contra `http://localhost:3000/api/webhooks/whatsapp`. En Windows, guardar el cuerpo en un archivo UTF-8 y enviarlo con `--data-binary @body.json`: pasarlo como argumento de `curl` altera los acentos e invalida la firma.
+
+**WA-01 · Verificación de Meta**
+- Pasos: `GET ?hub.mode=subscribe&hub.verify_token=<WHATSAPP_VERIFY_TOKEN>&hub.challenge=12345`. Repetir con un token incorrecto.
+- Esperado: responde `12345` (200). Con el token incorrecto, 403.
+
+**WA-02 · Firma inválida**
+- Pasos: `POST` con un cuerpo válido y el header `X-Hub-Signature-256: sha256=00`.
+- Esperado: 401 y no se crea nada.
+
+**WA-03 · Mensaje entrante válido**
+- Pasos: `POST` de un mensaje de texto con `from: "5491155550001"` para `phone_number_id: "100000000000001"`, firmado con HMAC-SHA256 del cuerpo crudo usando `WHATSAPP_APP_SECRET`. Para calcular la firma: `node -e "console.log(require('crypto').createHmac('sha256','<secret>').update(require('fs').readFileSync('body.json')).digest('hex'))"`.
+- Esperado:
+  - Responde `EVENT_RECEIVED` (200) de inmediato.
+  - Segundos después, en el Inbox aparece +5491155550001 con el mensaje y la respuesta de LUCIA.
+  - Sin `WHATSAPP_ACCESS_TOKEN`, el log del servidor dice "Respuesta de LUCIA no enviada: Falta WHATSAPP_ACCESS_TOKEN en .env."
+
+**WA-04 · Reintento duplicado**
+- Pasos: reenviar exactamente el mismo `POST` de WA-03 (mismo `id` de mensaje).
+- Esperado: 200, pero el mensaje no se duplica y LUCIA no responde dos veces.
+
+**WA-05 · Anuncio Click-to-WhatsApp**
+- Pasos: `POST` de un número nuevo cuyo mensaje incluye `"referral": {"source_type": "ad", "headline": "Control anual"}`.
+- Esperado: el paciente nuevo queda con canal "Meta Ads (Facebook)" y campaña "Control anual"; en Marketing suma un lead a ese canal.
+
+**WA-06 · Número de la clínica desconocido**
+- Pasos: `POST` con un `phone_number_id` que ninguna clínica tiene configurado.
+- Esperado: 200, el log dice "Ninguna clínica tiene el Phone Number ID …" y no se crea nada.
+
+**WA-07 · Tipo de mensaje no soportado**
+- Pasos: `POST` con un mensaje `"type": "image"`.
+- Esperado: se guarda como `[El paciente envió un mensaje de tipo "image", que todavía no se procesa]` y LUCIA responde.
 
 ---
 

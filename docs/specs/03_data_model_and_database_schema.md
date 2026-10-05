@@ -143,6 +143,11 @@ enum ConversationMode {
   PAUSED_HUMAN
 }
 
+enum ConversationChannel {
+  WHATSAPP  // Meta WhatsApp Cloud API
+  SIMULATOR // Simulador interno del CRM: nunca envía mensajes a Meta
+}
+
 model Patient {
   id                String         @id @default(uuid())
   clinicId          String
@@ -177,6 +182,7 @@ model Conversation {
   patientId       String
   patient         Patient          @relation(fields: [patientId], references: [id])
   mode            ConversationMode @default(AI_AUTONOMOUS)
+  channel ConversationChannel @default(WHATSAPP)
   pausedUntil     DateTime?
   lastMessageAt   DateTime         @default(now())
   pendingFollowupAt DateTime?      // Programado para regla de 24h sin respuesta

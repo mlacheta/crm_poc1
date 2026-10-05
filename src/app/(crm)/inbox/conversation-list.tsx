@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-type Item = { id: string; name: string; preview: string; lastMessageAt: string; paused: boolean };
+type Item = { id: string; name: string; preview: string; lastMessageAt: string; paused: boolean; simulator: boolean };
 
 export function ConversationList({ items }: { items: Item[] }) {
   const { id: activeId } = useParams<{ id?: string }>();
@@ -24,7 +24,10 @@ export function ConversationList({ items }: { items: Item[] }) {
               <span className="shrink-0 text-xs text-muted-foreground">{c.lastMessageAt}</span>
             </div>
             <p className="truncate text-xs text-muted-foreground">{c.preview}</p>
-            {c.paused && <Badge variant="destructive">Atención humana</Badge>}
+            <div className="flex flex-wrap gap-1">
+              {c.paused && <Badge variant="destructive">Atención humana</Badge>}
+              {c.simulator && <Badge variant="outline">Simulador</Badge>}
+            </div>
           </Link>
         </li>
       ))}

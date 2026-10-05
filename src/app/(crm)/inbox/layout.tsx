@@ -22,6 +22,7 @@ export default async function InboxLayout({ children }: LayoutProps<"/inbox">) {
     preview: c.messages[0]?.text ?? "",
     lastMessageAt: formatDateTime(c.lastMessageAt),
     paused: isLuciaPaused(c),
+    simulator: c.channel === "SIMULATOR",
   }));
 
   return (

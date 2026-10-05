@@ -1,22 +1,14 @@
 import { notFound } from "next/navigation";
+import { ChatMessage } from "@/components/chat-message";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/dal";
 import { isLuciaPaused } from "@/lib/conversations";
-import { formatDateTime, formatTime, patientName } from "@/lib/format";
+import { formatTime, patientName } from "@/lib/format";
 import { STAGE_LABELS } from "@/lib/pipeline";
 import { prisma } from "@/lib/prisma";
-import { cn } from "@/lib/utils";
-import type { MessageSender } from "@/generated/prisma/enums";
 import { pauseLucia, resumeLucia } from "../actions";
 import { MessageComposer } from "./message-composer";
-
-const SENDER_LABELS: Record<MessageSender, string> = {
-  PATIENT: "Paciente",
-  AI_LUCIA: "LUCIA",
-  HUMAN_AGENT: "Recepción",
-  SYSTEM: "Sistema",
-};
 
 export default async function ConversationPage({ params }: PageProps<"/inbox/[id]">) {
   const user = await requireUser(["ADMIN", "SECRETARIA"]);
@@ -38,7 +30,10 @@ export default async function ConversationPage({ params }: PageProps<"/inbox/[id
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
         <div>
-          <p className="font-medium">{patientName(conv.patient)}</p>
+          <p className="flex items-center gap-2 font-medium">
+            {patientName(conv.patient)}
+            {conv.channel === "SIMULATOR" && <Badge variant="outline">Simulador</Badge>}
+          </p>
           <p className="text-xs text-muted-foreground">
             {conv.patient.phoneNumber}
             {conv.patient.healthInsurance && ` · ${conv.patient.healthInsurance}`} · {STAGE_LABELS[conv.patient.currentStage]}
@@ -47,7 +42,7 @@ export default async function ConversationPage({ params }: PageProps<"/inbox/[id
         <div className="flex items-center gap-2">
           {paused ? (
             <Badge variant="destructive">
-              LUCIA pausada{conv.pausedUntil && ` hasta ${formatTime(conv.pausedUntil)}`}
+              LUCIA pausada {conv.pausedUntil ? `hasta ${formatTime(conv.pausedUntil)}` : "hasta que recepción la reanude"}
             </Badge>
           ) : (
             <Badge variant="secondary">LUCIA activa</Badge>
@@ -61,30 +56,12 @@ export default async function ConversationPage({ params }: PageProps<"/inbox/[id
       </header>
 
       <ol className="flex-1 space-y-2 overflow-y-auto p-3">
-        {conv.messages.map((m) => {
-          const outbound = m.sender !== "PATIENT";
-          return (
-            <li key={m.id} className={cn("flex", outbound ? "justify-end" : "justify-start")}>
-              <div
-                className={cn(
-                  "max-w-[80%] rounded-lg px-3 py-2 text-sm",
-                  m.sender === "PATIENT" && "bg-muted",
-                  m.sender === "AI_LUCIA" && "bg-primary/10",
-                  m.sender === "HUMAN_AGENT" && "bg-primary text-primary-foreground",
-                  m.sender === "SYSTEM" && "border border-dashed bg-background text-muted-foreground italic",
-                )}
-              >
-                <p className="text-[0.7rem] font-medium opacity-70">
-                  {SENDER_LABELS[m.sender]} · {formatDateTime(m.createdAt)}
-                </p>
-                <p className="whitespace-pre-wrap">{m.text}</p>
-              </div>
-            </li>
-          );
-        })}
+        {conv.messages.map((m) => (
+          <ChatMessage key={m.id} message={m} showTools />
+        ))}
       </ol>
 
-      <MessageComposer conversationId={conv.id} />
+      <MessageComposer conversationId={conv.id} channel={conv.channel} />
     </div>
   );
 }
