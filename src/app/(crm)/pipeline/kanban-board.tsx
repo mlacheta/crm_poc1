@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useId, useOptimistic, useState, useTransition } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -10,6 +10,7 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  type Announcements,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -39,6 +40,19 @@ export function KanbanBoard({ cards }: { cards: KanbanCard[] }) {
   const [, startTransition] = useTransition();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Id estable entre servidor y cliente: sin él, dnd-kit genera "DndDescribedBy-N" distinto en cada lado (error de hidratación).
+  const dndId = useId();
+  const nameOf = (id: string | number) => optimisticCards.find((c) => c.id === id)?.name ?? "el paciente";
+  const columnOf = (id: string | number | undefined) => PIPELINE_COLUMNS.find((c) => c.id === id)?.title;
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => `Tomaste a ${nameOf(active.id)}.`,
+    onDragOver: ({ active, over }) =>
+      over ? `${nameOf(active.id)} está sobre la columna ${columnOf(over.id)}.` : `${nameOf(active.id)} no está sobre ninguna columna.`,
+    onDragEnd: ({ active, over }) =>
+      over ? `Soltaste a ${nameOf(active.id)} en ${columnOf(over.id)}.` : `Soltaste a ${nameOf(active.id)} fuera de las columnas.`,
+    onDragCancel: ({ active }) => `Se canceló el movimiento de ${nameOf(active.id)}.`,
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -72,7 +86,20 @@ export function KanbanBoard({ cards }: { cards: KanbanCard[] }) {
   return (
     <>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
+      <DndContext
+        id={dndId}
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => setActiveId(null)}
+        accessibility={{
+          announcements,
+          screenReaderInstructions: {
+            draggable:
+              "Para mover a un paciente, presioná espacio. Usá las flechas para llevarlo a otra columna y espacio para soltarlo, o escape para cancelar.",
+          },
+        }}
+      >
         <div className="flex gap-3 overflow-x-auto pb-4">
           {PIPELINE_COLUMNS.map((column) => {
             const columnCards = optimisticCards.filter((c) => c.column === column.id);
