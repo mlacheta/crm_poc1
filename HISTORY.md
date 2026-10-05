@@ -4,7 +4,7 @@
 > y en "Decisiones" sólo lo que no se deduce del código ni de `docs/specs/`. Borrar lo obsoleto.
 
 ## Estado (2026-10-04)
-- Hitos 1, 2 y 3 hechos (roadmap: `docs/specs/05_*`). **Próximo: Hito 3.5** — identidad visual (logo SVG + paleta azul/gris/blanco, spec 05). Después Hito 4 — Mercado Pago + tabla de coberturas (`generate_mercadopago_payment` hoy sólo crea el Payment PENDING).
+- Hitos 1, 2, 3 y 3.5 hechos (roadmap: `docs/specs/05_*`). **Próximo: Hito 4** — Mercado Pago + tabla de coberturas (`generate_mercadopago_payment` hoy sólo crea el Payment PENDING).
 - Todo commiteado en `develop`. LUCIA probada con Gemini (free tier): tools OK en reserva, urgencia, guardrail, médico/día, derivación. Free tier = 5 req/min/modelo + 503 frecuentes → no apto producción. Usar `LLM_MODEL=gemini-3.7-flash` (3.8 y flash-latest comparten cuota).
 - Decidido: LUCIA no da consejos de alivio, sólo deriva a consulta (en prompt). Cobro según **tabla de coberturas por obra social y plan** (PRD §4.4.1, spec 03 §3, spec 04 `check_coverage`): especificada, se implementa en Hito 4. Pendiente: reintegro de seña y reglas para estudios/prácticas.
 - QA manual por rol en `qa/manual_tests.md` (mantener al agregar funcionalidad).
@@ -25,6 +25,7 @@ Next 16 (App Router, `after()` en webhooks, `src/proxy.ts` = ex-middleware) · T
 - Simulador: `Conversation.channel=SIMULATOR`, pacientes `utmSource=simulador` (+54 9 0000…); excluidos de Marketing.
 - Escalada: pausa sin vencimiento (`pausedUntil=null`) hasta que recepción reanude.
 - Esquema: +`DoctorProfile.consultationFee` (también en spec 03). Horarios: 1 franja por día en el form de admin.
+- Estilos: paleta clínica sólo como tokens en `globals.css` (`--primary`, `--success`, `--warning`, `--brand-accent`…); no usar hex ni colores Tailwind sueltos. Logo: `src/components/brand/lucia-logo.tsx` (+ `public/brand/*.svg`, `src/app/icon.svg`). Badges de estado: `STAGE_VARIANT` / `APPOINTMENT_STATUS_VARIANT`.
 - Seed destructivo; turnos calculados sobre los horarios reales de cada médico relativos a hoy.
 - Tests E2E: no hay suite en el repo; se probó con playwright-core + Chrome local desde el scratchpad.
 
@@ -32,3 +33,4 @@ Next 16 (App Router, `after()` en webhooks, `src/proxy.ts` = ex-middleware) · T
 - Hito 1 (`c3eca75`): scaffold Next, docker, esquema Prisma de spec 03, seed demo.
 - Hito 2: login/roles, Kanban DnD, Inbox con pausa, agenda/pacientes médico, marketing, admin.
 - Hito 3: agente LUCIA (AI SDK + 5 tools + mock), motor de agenda, webhook WhatsApp (firma, dedupe, referral), simulador.
+- Hito 3.5: logo SVG de LUCIA, paleta azul/gris/blanco con contraste AA verificado, badges de estado.

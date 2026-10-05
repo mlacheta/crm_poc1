@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="LUCIA">
+  <!-- Ojo (contorno almendrado) -->
+  <path d="M2.5 16C6.4 9.4 10.9 6.4 16 6.4S25.6 9.4 29.5 16C25.6 22.6 21.1 25.6 16 25.6S6.4 22.6 2.5 16Z" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round"/>
+  <!-- Iris como burbuja de chat: círculo + cola abajo a la izquierda -->
+  <path d="M16 9.6a6.2 6.2 0 1 1-3.9 11l-2.9 1.3 1-3A6.2 6.2 0 0 1 16 9.6Z" fill="#FFFFFF"/>
+  <circle cx="16" cy="15.8" r="4.1" fill="#FFFFFF"/>
+  <!-- Pupila y brillo -->
+  <circle cx="16" cy="15.8" r="1.8" fill="#1D5FA6"/>
+  <circle cx="18.6" cy="13.2" r="0.9" fill="#1D5FA6"/>
+</svg>

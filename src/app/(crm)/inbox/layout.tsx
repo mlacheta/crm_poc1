@@ -30,7 +30,7 @@ export default async function InboxLayout({ children }: LayoutProps<"/inbox">) {
       <h1 className="text-xl font-semibold">Inbox WhatsApp</h1>
       <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[18rem_1fr]">
         <ConversationList items={items} />
-        <div className="min-h-0 rounded-lg border">{children}</div>
+        <div className="min-h-0 rounded-lg border bg-card">{children}</div>
       </div>
     </div>
   );

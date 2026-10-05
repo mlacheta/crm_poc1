@@ -23,7 +23,7 @@ export function MessageComposer({ conversationId, channel }: { conversationId: s
         </Button>
       </div>
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
-      {state?.warning && <p className="text-sm text-amber-700 dark:text-amber-400">{state.warning}</p>}
+      {state?.warning && <p className="text-sm text-warning">{state.warning}</p>}
     </form>
   );
 }

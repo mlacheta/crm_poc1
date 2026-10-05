@@ -9,9 +9,11 @@ export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
   NO_SHOW: "No asistió",
 };
 
-export const APPOINTMENT_STATUS_VARIANT: Record<AppointmentStatus, "default" | "secondary" | "outline" | "destructive"> = {
-  TENTATIVE_LOCKED: "outline",
-  CONFIRMED: "default",
+export type StatusVariant = "secondary" | "outline" | "destructive" | "success" | "warning";
+
+export const APPOINTMENT_STATUS_VARIANT: Record<AppointmentStatus, StatusVariant> = {
+  TENTATIVE_LOCKED: "warning",
+  CONFIRMED: "success",
   COMPLETED: "secondary",
   RESCHEDULED: "outline",
   CANCELLED: "destructive",

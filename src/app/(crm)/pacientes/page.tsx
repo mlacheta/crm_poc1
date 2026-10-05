@@ -31,7 +31,7 @@ export default async function PacientesPage() {
         <h1 className="text-xl font-semibold">{doctorId ? "Mis pacientes" : "Pacientes"}</h1>
         <p className="text-sm text-muted-foreground">{patients.length} pacientes</p>
       </div>
-      <div className="rounded-lg border">
+      <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>

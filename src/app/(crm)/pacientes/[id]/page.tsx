@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_VARIANT } from "@/lib/appointments";
 import { requireUser } from "@/lib/auth/dal";
 import { formatDate, formatDateTime, patientName } from "@/lib/format";
-import { STAGE_LABELS } from "@/lib/pipeline";
+import { STAGE_LABELS, STAGE_VARIANT } from "@/lib/pipeline";
 import { prisma } from "@/lib/prisma";
 
 export default async function PacientePage({ params }: PageProps<"/pacientes/[id]">) {
@@ -40,7 +40,7 @@ export default async function PacientePage({ params }: PageProps<"/pacientes/[id
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-xl font-semibold">{patientName(patient)}</h1>
-        <Badge variant="secondary">{STAGE_LABELS[patient.currentStage]}</Badge>
+        <Badge variant={STAGE_VARIANT[patient.currentStage]}>{STAGE_LABELS[patient.currentStage]}</Badge>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[18rem_1fr]">

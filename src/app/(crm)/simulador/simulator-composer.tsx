@@ -24,7 +24,7 @@ export function SimulatorComposer({ phone, disabled }: { phone: string; disabled
     <div className="space-y-2 border-t p-3">
       {pending && (
         <div className="space-y-1 text-sm">
-          <p className="ml-auto w-fit max-w-[85%] rounded-lg bg-muted px-3 py-2 opacity-70">{lastSent}</p>
+          <p className="w-fit max-w-[85%] rounded-lg border bg-muted px-3 py-2 opacity-70">{lastSent}</p>
           <p className="text-xs text-muted-foreground">LUCIA está escribiendo…</p>
         </div>
       )}

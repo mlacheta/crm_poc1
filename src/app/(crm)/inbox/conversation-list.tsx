@@ -11,14 +11,14 @@ export function ConversationList({ items }: { items: Item[] }) {
   const { id: activeId } = useParams<{ id?: string }>();
 
   if (items.length === 0) {
-    return <p className="rounded-lg border p-4 text-sm text-muted-foreground">Todavía no hay conversaciones.</p>;
+    return <p className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">Todavía no hay conversaciones.</p>;
   }
 
   return (
-    <ul className="max-h-60 overflow-y-auto rounded-lg border md:max-h-none">
+    <ul className="max-h-60 overflow-y-auto rounded-lg border bg-card md:max-h-none">
       {items.map((c) => (
         <li key={c.id} className="border-b last:border-b-0">
-          <Link href={`/inbox/${c.id}`} className={cn("block space-y-1 p-3 hover:bg-muted", c.id === activeId && "bg-muted")}>
+          <Link href={`/inbox/${c.id}`} className={cn("block space-y-1 p-3 hover:bg-muted", c.id === activeId && "bg-secondary")}>
             <div className="flex items-center justify-between gap-2">
               <span className="truncate text-sm font-medium">{c.name}</span>
               <span className="shrink-0 text-xs text-muted-foreground">{c.lastMessageAt}</span>

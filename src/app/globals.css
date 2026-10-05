@@ -35,6 +35,10 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-brand-accent: var(--brand-accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -48,39 +52,44 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Paleta clínica de LUCIA (spec 05, Hito 3.5). Único lugar con colores definidos. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --background: #f3f6f9; /* Fondo suave */
+  --foreground: #1f2a37; /* Texto */
+  --card: #ffffff; /* Superficie */
+  --card-foreground: #1f2a37;
+  --popover: #ffffff;
+  --popover-foreground: #1f2a37;
+  --primary: #1d5fa6; /* Azul clínico */
+  --primary-hover: #164c86;
+  --primary-foreground: #ffffff;
+  --brand-accent: #3b82c4; /* Celeste: sólo gráficos, nunca texto */
+  --secondary: #e8f0fa; /* Azul tenue */
+  --secondary-foreground: #164c86;
+  --muted: #f3f6f9;
+  --muted-foreground: #5b6675; /* Texto secundario */
+  --accent: #e8f0fa;
+  --accent-foreground: #1f2a37;
+  --destructive: #b42318; /* Peligro */
+  --success: #1e7a4c; /* Éxito */
+  --warning: #9a6200; /* Alerta */
+  --border: #d9e0e8;
+  --input: #d9e0e8;
+  --ring: #3b82c4;
+  --chart-1: #1d5fa6;
+  --chart-2: #3b82c4;
+  --chart-3: #164c86;
+  --chart-4: #5b6675;
+  --chart-5: #d9e0e8;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #e8f0fa;
+  --sidebar-foreground: #1f2a37;
+  --sidebar-primary: #1d5fa6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffffff;
+  --sidebar-accent-foreground: #1f2a37;
+  --sidebar-border: #d9e0e8;
+  --sidebar-ring: #3b82c4;
 }
 
 .dark {

@@ -40,6 +40,22 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   NO_SHOW: "No show",
 };
 
+/** Color de la etiqueta de etapa: alerta = espera una acción, peligro = urgencia o pérdida. */
+export const STAGE_VARIANT: Record<PipelineStage, "secondary" | "success" | "warning" | "destructive"> = {
+  NUEVO_LEAD: "secondary",
+  EN_CONVERSACION_IA: "secondary",
+  DERIVADO_HUMANO: "destructive",
+  LEAD_PENDIENTE_RESPUESTA: "warning",
+  RESERVA_TENTATIVA: "warning",
+  PENDIENTE_PAGO: "warning",
+  TURNO_CONFIRMADO: "success",
+  RECORDATORIO_24H_ENVIADO: "success",
+  EN_SALA_DE_ESPERA: "secondary",
+  ATENDIDO: "secondary",
+  CANCELADO: "destructive",
+  NO_SHOW: "destructive",
+};
+
 export function columnForStage(stage: PipelineStage): PipelineColumnId {
   return PIPELINE_COLUMNS.find((c) => (c.stages as readonly PipelineStage[]).includes(stage))!.id;
 }

@@ -196,7 +196,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function MockNotice() {
   return (
-    <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+    <p className="rounded-lg border border-dashed bg-card p-3 text-xs text-muted-foreground">
       Modo <strong>mock</strong>: LUCIA responde con reglas por palabras clave (sin IA real) pero ejecuta las herramientas reales: agenda,
       reservas, derivaciones. Para usar un modelo real, configurá <code>LLM_PROVIDER</code> y su API key en <code>.env</code>.{" "}
       <Link href="https://ai-sdk.dev/providers/ai-sdk-providers" className={buttonVariants({ variant: "link", size: "xs" })}>

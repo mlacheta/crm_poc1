@@ -45,7 +45,7 @@ export default async function ConversationPage({ params }: PageProps<"/inbox/[id
               LUCIA pausada {conv.pausedUntil ? `hasta ${formatTime(conv.pausedUntil)}` : "hasta que recepción la reanude"}
             </Badge>
           ) : (
-            <Badge variant="secondary">LUCIA activa</Badge>
+            <Badge variant="success">LUCIA activa</Badge>
           )}
           <form action={toggle}>
             <Button type="submit" size="sm" variant={paused ? "default" : "outline"}>

@@ -15,9 +15,12 @@ export function NavLinks({ sections }: { sections: { href: string; label: string
           <Link
             key={s.href}
             href={s.href}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-md px-3 py-2 text-sm whitespace-nowrap hover:bg-muted",
-              active && "bg-background font-medium shadow-sm",
+              "rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors",
+              active
+                ? "bg-sidebar-primary font-medium text-sidebar-primary-foreground"
+                : "hover:bg-sidebar-accent",
             )}
           >
             {s.label}

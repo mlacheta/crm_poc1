@@ -65,9 +65,9 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
       </div>
 
       {appointments.length === 0 ? (
-        <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No hay turnos para este día.</p>
+        <p className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">No hay turnos para este día.</p>
       ) : (
-        <div className="rounded-lg border">
+        <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
               <TableRow>

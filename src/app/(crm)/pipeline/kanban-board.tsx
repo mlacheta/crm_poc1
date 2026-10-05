@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/core";
 import type { PipelineStage } from "@/generated/prisma/enums";
 import { Badge } from "@/components/ui/badge";
-import { PIPELINE_COLUMNS, STAGE_LABELS, type PipelineColumnId } from "@/lib/pipeline";
+import { PIPELINE_COLUMNS, STAGE_LABELS, STAGE_VARIANT, type PipelineColumnId } from "@/lib/pipeline";
 import { cn } from "@/lib/utils";
 import { movePatientStage } from "./actions";
 
@@ -98,8 +98,8 @@ function Column({ id, title, count, children }: { id: string; title: string; cou
       ref={setNodeRef}
       aria-label={title}
       className={cn(
-        "flex w-64 shrink-0 flex-col gap-2 rounded-lg border bg-muted/40 p-2 transition-colors",
-        isOver && "border-primary bg-primary/5",
+        "flex w-64 shrink-0 flex-col gap-2 rounded-lg border bg-muted p-2 transition-colors",
+        isOver && "border-primary bg-secondary",
       )}
     >
       <header className="flex items-center justify-between px-1 text-sm font-medium">
@@ -122,14 +122,14 @@ function DraggableCard({ card }: { card: KanbanCard }) {
 
 function CardBody({ card, className }: { card: KanbanCard; className?: string }) {
   return (
-    <article className={cn("space-y-1.5 rounded-md border bg-background p-2.5 text-sm", className)}>
+    <article className={cn("space-y-1.5 rounded-md border bg-card p-2.5 text-sm shadow-xs", className)}>
       <p className="font-medium">{card.name}</p>
       <p className="text-xs text-muted-foreground">
         {[card.name !== card.phone && card.phone, card.healthInsurance].filter(Boolean).join(" · ") || "Sin datos aún"}
       </p>
       {card.appointment && <p className="text-xs">Turno: {card.appointment}</p>}
       <div className="flex flex-wrap gap-1">
-        <Badge variant="secondary">{STAGE_LABELS[card.stage]}</Badge>
+        <Badge variant={STAGE_VARIANT[card.stage]}>{STAGE_LABELS[card.stage]}</Badge>
         <Badge variant="outline">{card.channel}</Badge>
       </div>
     </article>

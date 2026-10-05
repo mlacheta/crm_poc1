@@ -1,4 +1,4 @@
-# Casos de prueba manuales — LUCIA CRM (Hitos 1 a 3)
+# Casos de prueba manuales — LUCIA CRM (Hitos 1 a 3.5)
 
 ## Preparación
 
@@ -601,6 +601,30 @@ Requiere `WHATSAPP_VERIFY_TOKEN` y `WHATSAPP_APP_SECRET` en `.env` y que la clí
 **WA-07 · Tipo de mensaje no soportado**
 - Pasos: `POST` con un mensaje `"type": "image"`.
 - Esperado: se guarda como `[El paciente envió un mensaje de tipo "image", que todavía no se procesa]` y LUCIA responde.
+
+---
+
+## 12. Identidad visual (Hito 3.5)
+
+**VIS-01 · Logo en todas sus ubicaciones**
+- Pasos: abrir `/login`, ingresar, mirar el menú lateral y la pestaña del navegador; abrir una conversación del Inbox o del Simulador con respuestas de LUCIA.
+- Esperado: login con fondo azul y logo blanco; menú lateral con logo azul y la bajada "CRM oftalmológico"; favicon con el ojo de LUCIA; avatar del ojo junto a cada mensaje de LUCIA.
+
+**VIS-02 · Paleta**
+- Pasos: recorrer todas las secciones.
+- Esperado: fondo general gris muy claro; tarjetas, tablas y paneles blancos; menú lateral azul tenue con la sección activa en azul y texto blanco; botones principales azules que se oscurecen al pasar el mouse.
+
+**VIS-03 · Colores de estado**
+- Pasos: mirar las etiquetas del Pipeline, la Agenda y el Inbox.
+- Esperado: verde en "Turno confirmado", "Confirmado" y "LUCIA activa"; ámbar en "Pendiente de pago", "Reserva tentativa" y "Sin respuesta"; rojo en "Derivado a humano", "Atención humana", "Cancelado" y "No asistió". Cada estado se lee también como texto, no sólo por el color.
+
+**VIS-04 · Celular**
+- Pasos: con un ancho de 390 px, abrir login, Pipeline e Inbox.
+- Esperado: el logo y los formularios entran sin desbordar; el menú pasa arriba en horizontal con la sección activa en azul.
+
+**VIS-05 · Mensajes**
+- Pasos: abrir una conversación con mensajes de paciente, LUCIA, recepción y sistema.
+- Esperado: paciente a la izquierda en gris con borde; LUCIA a la derecha en azul tenue con su avatar; recepción a la derecha en azul con texto blanco (la hora también legible); sistema con borde punteado.
 
 ---
 
