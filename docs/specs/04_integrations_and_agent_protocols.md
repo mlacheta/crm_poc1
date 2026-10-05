@@ -118,6 +118,7 @@ REGLAS PRIMORDIALES:
 - **`escalate_to_human`** pausa a LUCIA sin vencimiento (hasta que recepción la reanude) y deja un mensaje de sistema en el chat.
 - **Proveedor de LLM** configurable (`LLM_PROVIDER`: `mock` | `google` | `anthropic` | `openai`) vía Vercel AI SDK. `mock` es un modelo de reglas para pruebas sin API key que ejecuta las mismas herramientas.
 - **Mercado Pago** (Hito 4): por ahora `generate_mercadopago_payment` registra el pago `PENDING` y no devuelve link.
+- **Sedes** (Hito 3.6, PRD §4.7): si la clínica tiene más de una sede, LUCIA pregunta cuál prefiere el paciente. `check_availability` acepta un `locationId` opcional (sin él, busca en todas) y cada turno devuelto informa su sede. `hold_appointment_slot` toma la sede del horario del médico. `get_clinic_info` con `UBICACION` lista las sedes. El prompt incluye las sedes y los horarios de cada médico por sede.
 - **Coberturas** (Hito 4): `hold_appointment_slot` aplicará la regla de cobertura del paciente, guardará el snapshot en el turno y devolverá el siguiente paso: `PAY` (con monto), `CONFIRMED` (sin cargo) o `PENDING_AUTHORIZATION`. `generate_mercadopago_payment` cobrará el monto del snapshot. `get_clinic_info` con `OBRAS_SOCIALES` leerá la tabla de coberturas en lugar de la lista fija actual.
 
 ---

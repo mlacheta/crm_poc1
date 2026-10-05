@@ -94,6 +94,25 @@ Objetivo: que el CRM se vea como un producto de salud profesional y confiable, c
 3. No hay colores definidos fuera de los tokens (se verifica buscando hex sueltos en `src/`).
 4. Las pruebas E2E y los casos de `qa/manual_tests.md` de los Hitos 1–3 siguen pasando sin cambios funcionales.
 
+#### Hito 3.6: Multi-clínica (SaaS) y Sedes
+Objetivo: poder vender LUCIA a varias clínicas, cada una aislada y con una o más sedes (PRD §4.7, spec 02 §4.4, spec 03 §4). Va antes del Hito 4 porque cambia la autenticación y el modelo de agenda sobre el que se apoyan cobros, facturación y recordatorios.
+
+**Alcance**
+- **Panel de plataforma** (`PLATFORM_ADMIN`): listado de clínicas con métricas agregadas; alta de clínica (nombre, CUIT, slug, primera sede y primer Administrador con contraseña inicial); suspender y reactivar.
+- **Usuarios de la clínica** (Administrador): alta, edición y desactivación de usuarios de todos los roles; contraseña inicial con cambio obligatorio en el primer ingreso; cambio de contraseña para todos los usuarios.
+- **Ingreso**: email + contraseña con selección de clínica cuando coinciden varias cuentas; link propio por clínica (`/c/<slug>`); bloqueo de clínicas suspendidas.
+- **Sedes**: ABM de sedes en Configuración; horarios de cada médico por sede y día, con consultorio; turnos con sede; filtro por sede en Agenda, Pipeline y Marketing.
+- **LUCIA**: pregunta la sede, busca turnos por sede e informa la dirección de la sede del turno (spec 04 §1.3).
+- **Migración** de los datos existentes a una sede inicial por clínica, y **seed** con dos clínicas (una con dos sedes) y un médico con cuenta en ambas.
+
+**Criterios de aceptación**
+1. Un usuario de la clínica A no ve ni modifica datos de la clínica B: probado por URL, por server action y desde el Simulador.
+2. Un médico con cuentas en dos clínicas elige a cuál entrar y sólo ve los pacientes de esa clínica.
+3. Una clínica suspendida no permite ingresar y LUCIA no responde por su WhatsApp.
+4. LUCIA ofrece turnos de la sede elegida y nunca un horario de un médico en una sede donde ese día no atiende.
+5. La plataforma no puede abrir pacientes, conversaciones ni historias clínicas de ninguna clínica.
+6. Las pruebas de los Hitos 1 a 3.5 siguen pasando, adaptadas a sedes.
+
 #### Hito 4: Pasarela de Cobros Mercado Pago
 - Tabla de coberturas por obra social y plan (PRD §4.4.1, spec 03 §3): ABM en Configuración, herramienta `check_coverage` de LUCIA y monto del turno según la modalidad (sin cargo, copago, seña, particular).
 - Generador de preferencias con expiración de 15 minutos (lock de slot).

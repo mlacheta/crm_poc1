@@ -24,6 +24,12 @@ Automatiza el ciclo completo del paciente: desde la captación multicanal (tráf
 
 ### 3. Roles de Usuario y Permisos (RBAC)
 
+Todos los roles, salvo Plataforma, pertenecen a una única clínica y sólo ven datos de ella (ver 4.7).
+
+0. **Plataforma (equipo LUCIA)**:
+   - Alta, suspensión y reactivación de clínicas, y alta de su primer Administrador.
+   - Métricas operativas agregadas por clínica; sin acceso a datos de pacientes ni clínicos.
+
 1. **Secretaria / Recepción**:
    - Visualización de la agenda diaria/semanal por médico y consultorio.
    - Pipeline CRM (Kanban) de pacientes: contactados, agendados, pendientes de pago, confirmados, en sala de espera, atendidos.
@@ -41,7 +47,8 @@ Automatiza el ciclo completo del paciente: desde la captación multicanal (tráf
    - Reporte de pacientes reactivados vs. perdidos.
 
 4. **Administrador / Dueño de Clínica**:
-   - Configuración de médicos, agendas, consultorios, tarifas y la tabla de coberturas por obra social y plan (ver 4.4.1).
+   - Alta, edición y desactivación de los usuarios de su clínica (todos los roles).
+   - Configuración de sedes, médicos, agendas por sede, consultorios, tarifas y la tabla de coberturas por obra social y plan (ver 4.4.1 y 4.7).
    - Integración fiscal ARCA (Certificado digital, Punto de Venta, tipo de factura B/C).
    - Facturación consolidada y reportes financieros (Mercado Pago reconciliado).
 
@@ -127,6 +134,37 @@ Reglas:
 - **Historia Clínica Oftalmológica Simplificada**: Ficha de antecedentes, agudeza visual (AV), refracción, presión ocular (PIO), biomicroscopía y fondo de ojo.
 - **Recetas Médicas Digitales**: Generación de receta con firma digital/médica conforme a normativa vigente en Argentina.
 - **Solicitud de Reseñas para Google Business**: 2 a 4 horas después de completada la consulta médica, si el estado es `Atendido`, LUCIA envía un mensaje invitando a dejar una calificación en Google Maps con link directo.
+
+
+#### 4.7. Multi-clínica (SaaS) y Sedes
+LUCIA se vende a varias clínicas. Cada clínica es un espacio aislado: sus usuarios, médicos, pacientes, conversaciones, turnos, pagos, coberturas y configuración no son visibles para ninguna otra.
+
+**Alta de clínicas (rol Plataforma)**
+- El equipo de LUCIA da de alta cada clínica desde un panel de plataforma: nombre, CUIT, identificador corto para su link (`slug`, ej. `centro-vision`) y el email de su primer Administrador, que recibe una contraseña inicial y debe cambiarla al ingresar.
+- La plataforma puede suspender y reactivar una clínica. Una clínica suspendida no permite ingresar a sus usuarios y LUCIA no responde por su WhatsApp.
+- El panel muestra por clínica sólo datos operativos agregados (cantidad de usuarios, sedes, pacientes, conversaciones del mes); **nunca datos de pacientes ni clínicos**.
+
+**Usuarios por clínica**
+- El Administrador de cada clínica da de alta, edita y desactiva a sus usuarios de todos los roles (Administrador, Secretaría, Médico, Marketing).
+- Una persona que trabaja en dos clínicas (ej. un médico) tiene **una cuenta independiente en cada una**, creada por cada clínica, con su propia contraseña. No se comparten datos ni configuración entre esas cuentas.
+- El email es único dentro de cada clínica, y puede repetirse entre clínicas.
+
+**Ingreso**
+- Pantalla de ingreso única con email y contraseña:
+  - Si coinciden con una sola cuenta, entra directo a su clínica.
+  - Si coinciden con cuentas de más de una clínica, elige a cuál entrar; sólo se listan las clínicas cuya contraseña coincidió.
+  - Para cambiar de clínica, cierra sesión y vuelve a ingresar.
+- Cada clínica tiene su link propio (`/c/<slug>`): muestra su nombre en la pantalla de ingreso y entra directo a esa clínica.
+- Los mensajes de error no revelan si un email existe ni en qué clínicas.
+
+**Sedes**
+- Una clínica puede tener una o más sedes (ej. Palermo y Belgrano), cada una con nombre, dirección, teléfono y sus consultorios.
+- Un médico puede atender en varias sedes de la misma clínica: su horario se define **por sede y por día** (ej. lunes en Palermo, miércoles en Belgrano).
+- Cada turno pertenece a una sede. La agenda, el Pipeline y Marketing se filtran por sede.
+- El paciente es de la clínica, no de la sede: puede atenderse en cualquiera.
+- LUCIA pregunta en qué sede prefiere atenderse el paciente cuando la clínica tiene más de una, ofrece turnos de esa sede (o de todas, si le da igual) e informa la dirección de la sede del turno.
+- El número de WhatsApp es de la clínica y atiende a todas sus sedes.
+- Pendiente de definir: si cada sede factura con su propio punto de venta de ARCA.
 
 ---
 

@@ -13,6 +13,9 @@ erDiagram
     CLINIC ||--o{ APPOINTMENT : hosts
     CLINIC ||--o{ INVOICE_CONFIG : configures
     CLINIC ||--o{ HEALTH_INSURANCE : accepts
+    CLINIC ||--o{ LOCATION : operates
+    LOCATION ||--o{ AVAILABILITY_SCHEDULE : hosts
+    LOCATION ||--o{ APPOINTMENT : hosts
 
     HEALTH_INSURANCE ||--o{ HEALTH_INSURANCE_PLAN : offers
     HEALTH_INSURANCE_PLAN ||--o{ PATIENT : covers
@@ -413,3 +416,60 @@ Cambios en modelos existentes:
 | `Appointment` | `patientAmount Decimal? @db.Decimal(10, 2)` | Snapshot del monto a cobrar (0 en `SIN_CARGO`). |
 
 Resolución de la regla (en este orden): plan exacto de la obra social → fila `*` de la obra social → obra social desconocida (no se promete cobertura). Sin obra social: `PARTICULAR` con `DoctorProfile.consultationFee`.
+
+---
+
+### 4. Multi-clínica (SaaS) y Sedes (pendiente de implementar — Hito 3.6)
+
+Implementa el PRD §4.7. Todas las entidades de negocio ya cuelgan de `Clinic` (`clinicId`); estos son los cambios.
+
+```prisma
+enum Role {
+  PLATFORM_ADMIN // Equipo LUCIA: sin clínica, sin acceso a datos de pacientes
+  ADMIN
+  SECRETARIA
+  MEDICO
+  MARKETING
+}
+
+enum ClinicStatus {
+  ACTIVE
+  SUSPENDED // Nadie ingresa y LUCIA no responde
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  clinicId  String
+  clinic    Clinic   @relation(fields: [clinicId], references: [id])
+  name      String   // "Palermo", "Belgrano"
+  address   String
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  availabilities AvailabilitySchedule[]
+  appointments   Appointment[]
+
+  @@unique([clinicId, name])
+}
+```
+
+Cambios en modelos existentes:
+
+| Modelo | Cambio | Motivo |
+| :--- | :--- | :--- |
+| `Clinic` | `slug String @unique` | Link propio de la clínica (`/c/<slug>`) |
+| `Clinic` | `status ClinicStatus @default(ACTIVE)` | Suspender una clínica sin borrarla |
+| `Clinic` | `whatsappNumberId` pasa a `@unique` | El webhook asigna cada mensaje a una sola clínica |
+| `Clinic` | `locations Location[]` | Sus sedes (al menos una) |
+| `User` | `clinicId String?` (nullable) | `PLATFORM_ADMIN` no pertenece a ninguna clínica; el resto de los roles la requiere (validado en la app) |
+| `User` | `email` deja de ser `@unique` → `@@unique([clinicId, email])` | La misma persona puede tener cuentas independientes en varias clínicas |
+| `User` | `mustChangePassword Boolean @default(false)` | Contraseña inicial que el usuario debe cambiar al ingresar |
+| `AvailabilitySchedule` | `locationId String` + relación; `consultorioNumber String?` | El horario de un médico se define por sede y día, con su consultorio |
+| `DoctorProfile` | se quita `consultorioNumber` | Pasa al horario de cada sede |
+| `Appointment` | `locationId String` + relación | Cada turno pertenece a una sede (la del horario en que cae) |
+
+Reglas:
+- `Patient` y `Conversation` siguen siendo de la clínica, no de la sede.
+- Un médico que atiende en dos clínicas = dos `User` + dos `DoctorProfile`, uno por clínica, sin vínculo entre sí.
+- Migración de datos: cada clínica existente recibe una sede inicial con su dirección actual; sus horarios y turnos pasan a esa sede, y el `consultorioNumber` del médico se copia a cada uno de sus horarios.

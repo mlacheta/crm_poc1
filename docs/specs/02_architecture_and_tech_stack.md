@@ -126,7 +126,8 @@ stateDiagram-v2
 
 1. **Gestión de Sesiones y Autenticación**:
    - Autenticación con JWT / Supabase Auth o NextAuth.js.
-   - Roles verificados en middleware: `ADMIN`, `SECRETARIA`, `MEDICO`, `MARKETING`.
+   - Roles verificados en middleware: `PLATFORM_ADMIN`, `ADMIN`, `SECRETARIA`, `MEDICO`, `MARKETING`.
+   - La sesión identifica la cuenta y su clínica; cambiar de clínica requiere cerrar sesión y volver a ingresar (PRD §4.7).
 
 2. **Aislamiento de Información Médica (PHI - Protected Health Information)**:
    - Los datos clínicos (motivo de consulta, prescripciones, antecedentes) sólo son accesibles para el rol `MEDICO` y `ADMIN`.
@@ -135,3 +136,10 @@ stateDiagram-v2
 3. **Caché y Seguridad en Facturación ARCA**:
    - Los certificados digitales `.key` y `.crt` se guardan encriptados en variables de entorno / Vault.
    - El Ticket de Acceso (TA) de ARCA se almacena en Redis con un Time-To-Live (TTL) de 11 horas y 50 minutos (válido por 12 horas) para evitar sobrecargar los servidores de WSAA.
+
+4. **Aislamiento entre Clínicas (multi-tenant, PRD §4.7)**:
+   - Toda lectura y escritura de datos de negocio se filtra por el `clinicId` de la sesión, verificado contra la base en cada página y server action. Un id de otra clínica en la URL o en un formulario responde "no encontrado", nunca un error que revele que existe.
+   - Las herramientas de LUCIA reciben la clínica, el paciente y la conversación del contexto, nunca del modelo.
+   - El webhook de WhatsApp asigna cada mensaje a la clínica dueña del Phone Number ID; si la clínica está suspendida, el mensaje se registra pero LUCIA no responde.
+   - `PLATFORM_ADMIN` sólo opera sobre clínicas, sus sedes y sus administradores, y ve métricas agregadas: no accede a pacientes, conversaciones ni historias clínicas.
+   - Las pruebas de aceptación incluyen intentos de acceso cruzado entre dos clínicas, por URL y por server action.
