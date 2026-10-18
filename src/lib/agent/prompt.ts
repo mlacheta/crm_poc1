@@ -2,26 +2,32 @@
 import { arToday } from "@/lib/dates";
 import { DAY_NAMES, formatARS, formatLongDate, formatTime, patientName } from "@/lib/format";
 import { STAGE_LABELS } from "@/lib/pipeline";
-import type { Clinic, DoctorProfile, AvailabilitySchedule, Patient } from "@/generated/prisma/client";
+import type { Clinic, DoctorProfile, AvailabilitySchedule, Location, Patient } from "@/generated/prisma/client";
 
-type DoctorWithSchedule = DoctorProfile & { user: { fullName: string }; availabilities: AvailabilitySchedule[] };
+type DoctorWithSchedule = DoctorProfile & {
+  user: { fullName: string };
+  availabilities: (AvailabilitySchedule & { location: Pick<Location, "name" | "isActive"> })[];
+};
 
 export function buildSystemPrompt({
   clinic,
+  locations,
   doctors,
   patient,
   now,
 }: {
   clinic: Clinic;
+  /** Sedes activas de la clínica (PRD §4.7). */
+  locations: Pick<Location, "id" | "name" | "address">[];
   doctors: DoctorWithSchedule[];
   patient: Patient;
   now: Date;
 }) {
   const doctorLines = doctors.map((d) => {
     const days = d.availabilities
-      .filter((a) => a.isActive)
+      .filter((a) => a.isActive && a.location.isActive)
       .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
-      .map((a) => `${DAY_NAMES[a.dayOfWeek]} ${a.startTime}-${a.endTime}`)
+      .map((a) => `${DAY_NAMES[a.dayOfWeek]} ${a.startTime}-${a.endTime}${locations.length > 1 ? ` en ${a.location.name}` : ""}`)
       .join(", ");
     return `- ${d.user.fullName} (doctorId: ${d.id}) · ${d.specialty} · consulta particular ${formatARS(d.consultationFee)} · ${days || "sin horarios"}`;
   });
@@ -44,6 +50,7 @@ REGLAS PRIMORDIALES:
    - Si pide hablar con una persona, ejecutá 'escalate_to_human' con urgencyLevel 'LOW'.
 2. AGENDAMIENTO:
    - Averiguá el motivo de consulta (control de rutina, estudios, anteojos, molestias) y si tiene obra social o es particular.
+   - Si la clínica tiene más de una sede, preguntá en cuál prefiere atenderse (o si le da igual) y pasá su locationId a 'check_availability'.
    - Consultá disponibilidad con 'check_availability'. Nunca inventes horarios: ofrecé como máximo 3 opciones claras, numeradas, de las que devolvió la herramienta.
    - Antes de reservar pedí nombre y apellido. Cuando el paciente elija, ejecutá 'hold_appointment_slot' con el doctorId y el slotDateTime EXACTOS de la herramienta.
    - Para confirmar el turno, ejecutá 'generate_mercadopago_payment' con el appointmentId de la reserva.
@@ -56,7 +63,10 @@ REGLAS PRIMORDIALES:
 
 CONTEXTO
 - Hoy es ${formatLongDate(now)} (${arToday(now)}), son las ${formatTime(now)} en Argentina. Usá fechas YYYY-MM-DD en las herramientas.
-- Dirección: ${clinic.address}. Teléfono: ${clinic.phone}.
+- Teléfono: ${clinic.phone}.
+- Sedes:
+${locations.map((l) => `  - ${l.name} (locationId: ${l.id}): ${l.address}`).join("\n")}
+  Al confirmar un turno, informá la sede y su dirección.
 - Médicos:
 ${doctorLines.join("\n")}
 - Paciente actual:

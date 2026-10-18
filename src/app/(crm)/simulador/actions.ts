@@ -5,21 +5,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { handleInboundMessage } from "@/lib/agent/engine";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
 import { SIMULATOR_PHONE, SIMULATOR_UTM_SOURCE } from "@/lib/simulator";
 
 const ROLES = ["ADMIN", "SECRETARIA"] as const;
 
 export async function startSimulation() {
-  await requireUser(ROLES);
+  await requireClinicUser(ROLES);
   redirect(`/simulador?tel=${encodeURIComponent(`+5490000${String(randomInt(0, 1_000_000)).padStart(6, "0")}`)}`);
 }
 
 export type SimState = { error?: string } | undefined;
 
 export async function sendSimulatorMessage(phoneNumber: string, _prev: SimState, formData: FormData): Promise<SimState> {
-  const user = await requireUser(ROLES);
+  const user = await requireClinicUser(ROLES);
   if (!SIMULATOR_PHONE.test(phoneNumber)) return { error: "Número de prueba inválido." };
   const text = z.string().trim().min(1).max(4096).safeParse(formData.get("text"));
   if (!text.success) return { error: "Escribí un mensaje." };
@@ -30,7 +30,7 @@ export async function sendSimulatorMessage(phoneNumber: string, _prev: SimState,
 
 /** Borra todos los pacientes creados por el simulador y sus datos asociados. */
 export async function clearSimulatorData() {
-  const user = await requireUser(ROLES);
+  const user = await requireClinicUser(ROLES);
   const where = { clinicId: user.clinicId, utmSource: SIMULATOR_UTM_SOURCE };
   const patientIds = (await prisma.patient.findMany({ where, select: { id: true } })).map((p) => p.id);
   const appointmentIds = { appointment: { patientId: { in: patientIds } } };

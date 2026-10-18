@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
+import { activeLocations, scheduleBySite } from "@/lib/locations";
 import { prisma } from "@/lib/prisma";
 import { updateDoctor } from "../../actions";
 import { DoctorForm } from "../../doctor-form";
 
 export default async function EditDoctorPage({ params }: PageProps<"/admin/medicos/[id]">) {
-  const user = await requireUser(["ADMIN"]);
+  const user = await requireClinicUser(["ADMIN"]);
   const { id } = await params;
 
   const doctor = await prisma.doctorProfile.findFirst({
@@ -15,6 +16,7 @@ export default async function EditDoctorPage({ params }: PageProps<"/admin/medic
     include: { user: { select: { fullName: true, email: true } }, availabilities: true },
   });
   if (!doctor) notFound();
+  const locations = await activeLocations(user.clinicId);
 
   return (
     <div className="space-y-4">
@@ -29,18 +31,14 @@ export default async function EditDoctorPage({ params }: PageProps<"/admin/medic
         <CardContent>
           <DoctorForm
             action={updateDoctor.bind(null, doctor.id)}
+            locations={locations}
             values={{
               fullName: doctor.user.fullName,
               licenseNumber: doctor.licenseNumber,
               specialty: doctor.specialty,
-              consultorioNumber: doctor.consultorioNumber ?? "",
               appointmentDuration: doctor.appointmentDuration,
               consultationFee: Number(doctor.consultationFee),
-              schedule: Object.fromEntries(
-                doctor.availabilities
-                  .filter((a) => a.isActive)
-                  .map((a) => [a.dayOfWeek, { startTime: a.startTime, endTime: a.endTime }]),
-              ),
+              schedule: scheduleBySite(doctor.availabilities),
             }}
           />
         </CardContent>

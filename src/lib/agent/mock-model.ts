@@ -55,7 +55,7 @@ const call = (toolName: string, input: unknown): LanguageModelV4Content => ({
 });
 const text = (value: string): LanguageModelV4Content => ({ type: "text", text: value });
 
-type Slot = { doctorId: string; doctor: string; day: string; time: string; slotDateTime: string; fee: string };
+type Slot = { doctorId: string; doctor: string; sede: string; day: string; time: string; slotDateTime: string; fee: string };
 
 function respondToToolResult({ toolName, value }: ToolResult, prompt: LanguageModelV4Message[]): LanguageModelV4Content {
   const v = value as Record<string, unknown>;
@@ -63,7 +63,7 @@ function respondToToolResult({ toolName, value }: ToolResult, prompt: LanguageMo
     case "check_availability": {
       const slots = (v.slots as Slot[]) ?? [];
       if (slots.length === 0) return text("No encontré turnos libres en esos días 😕 ¿Querés que busque la semana siguiente?");
-      const options = slots.slice(0, 3).map((s, i) => `${i + 1}) ${s.day} ${s.time} hs con ${s.doctor} (${s.fee})`);
+      const options = slots.slice(0, 3).map((s, i) => `${i + 1}) ${s.day} ${s.time} hs con ${s.doctor} en ${s.sede} (${s.fee})`);
       return text(`Tengo estos turnos disponibles:\n\n${options.join("\n")}\n\nRespondé con el número que prefieras.`);
     }
     case "hold_appointment_slot":
@@ -73,7 +73,7 @@ function respondToToolResult({ toolName, value }: ToolResult, prompt: LanguageMo
       const hold = findToolResult(prompt, "hold_appointment_slot") as Record<string, string> | undefined;
       if (!v.ok) return text(`No pude generar el pago: ${String(v.error)}`);
       return text(
-        `¡Listo! Te reservé el turno del ${hold?.day} a las ${hold?.time} hs con ${hold?.doctor} 🙌\n\n` +
+        `¡Listo! Te reservé el turno del ${hold?.day} a las ${hold?.time} hs con ${hold?.doctor} en la sede ${hold?.sede} (${hold?.address}) 🙌\n\n` +
           `El valor de la consulta es ${String(v.amount)}. En un ratito recepción te envía el link de pago; el turno queda retenido 15 minutos.`,
       );
     }
@@ -84,7 +84,10 @@ function respondToToolResult({ toolName, value }: ToolResult, prompt: LanguageMo
           : "Perfecto, ya le aviso a recepción y en breve te responde una persona del equipo.",
       );
     case "get_clinic_info": {
-      if (v.address) return text(`Estamos en ${String(v.address)}. Teléfono: ${String(v.phone)}.\n\n${String(v.note)}`);
+      if (v.sedes)
+        return text(
+          `Nuestras sedes:\n${(v.sedes as { name: string; address: string }[]).map((l) => `• ${l.name}: ${l.address}`).join("\n")}\n\nTeléfono: ${String(v.phone)}.\n\n${String(v.note)}`,
+        );
       if (v.accepted) return text(`Trabajamos con ${(v.accepted as string[]).join(", ")}. ${String(v.particular)}`);
       if (v.studies)
         return text(

@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { formatDateTime, patientName } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export default async function PacientesPage() {
-  const user = await requireUser(["ADMIN", "MEDICO"]);
+  const user = await requireClinicUser(["ADMIN", "MEDICO"]);
   // Un médico sólo ve pacientes con al menos un turno con él; el admin ve todos.
   const doctorId = user.role === "MEDICO" ? user.doctorProfile?.id : undefined;
   if (user.role === "MEDICO" && !doctorId) {

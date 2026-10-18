@@ -19,6 +19,10 @@ export type Slot = {
   doctorName: string;
   specialty: string;
   fee: number;
+  locationId: string;
+  locationName: string;
+  locationAddress: string;
+  consultorio: string | null;
   start: Date;
   end: Date;
 };
@@ -35,7 +39,14 @@ function blockingWhere(now: Date): Prisma.AppointmentWhereInput {
 
 async function loadSlots(
   db: Db,
-  { clinicId, doctorId, fromYmd, toYmd, now }: { clinicId: string; doctorId?: string; fromYmd: string; toYmd: string; now: Date },
+  {
+    clinicId,
+    doctorId,
+    locationId,
+    fromYmd,
+    toYmd,
+    now,
+  }: { clinicId: string; doctorId?: string; locationId?: string; fromYmd: string; toYmd: string; now: Date },
 ): Promise<Slot[]> {
   const rangeStart = arDateTime(fromYmd);
   const rangeEnd = arDateTime(addDays(toYmd, 1));
@@ -44,7 +55,11 @@ async function loadSlots(
     where: { clinicId, ...(doctorId && { id: doctorId }) },
     include: {
       user: { select: { fullName: true, isActive: true } },
-      availabilities: { where: { isActive: true } },
+      // Sólo horarios de sedes activas de la clínica (y de la sede pedida, si hay una).
+      availabilities: {
+        where: { isActive: true, location: { isActive: true, clinicId, ...(locationId && { id: locationId }) } },
+        include: { location: { select: { id: true, name: true, address: true } } },
+      },
       appointments: {
         where: { startDateTime: { lt: rangeEnd }, endDateTime: { gt: rangeStart }, ...blockingWhere(now) },
         select: { startDateTime: true, endDateTime: true },
@@ -72,6 +87,10 @@ async function loadSlots(
             doctorName: doctor.user.fullName,
             specialty: doctor.specialty,
             fee: Number(doctor.consultationFee),
+            locationId: range.location.id,
+            locationName: range.location.name,
+            locationAddress: range.location.address,
+            consultorio: range.consultorioNumber,
             start,
             end,
           });
@@ -86,6 +105,7 @@ async function loadSlots(
 export async function findAvailableSlots(params: {
   clinicId: string;
   doctorId?: string;
+  locationId?: string;
   fromYmd?: string;
   toYmd?: string;
   now?: Date;
@@ -95,7 +115,7 @@ export async function findAvailableSlots(params: {
   const fromYmd = params.fromYmd && params.fromYmd > today ? params.fromYmd : today;
   const maxYmd = addDays(fromYmd, MAX_RANGE_DAYS - 1);
   const toYmd = params.toYmd && params.toYmd >= fromYmd && params.toYmd <= maxYmd ? params.toYmd : addDays(fromYmd, 6);
-  return loadSlots(prisma, { clinicId: params.clinicId, doctorId: params.doctorId, fromYmd, toYmd, now });
+  return loadSlots(prisma, { clinicId: params.clinicId, doctorId: params.doctorId, locationId: params.locationId, fromYmd, toYmd, now });
 }
 
 export type HoldResult =
@@ -139,6 +159,7 @@ export async function holdSlot(params: {
               clinicId: params.clinicId,
               patientId: params.patientId,
               doctorId: doctor.id,
+              locationId: slot.locationId,
               startDateTime: slot.start,
               endDateTime: slot.end,
               status: "TENTATIVE_LOCKED",

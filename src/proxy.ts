@@ -8,9 +8,10 @@ export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
 
-  // /login no redirige por cookie: una cookie válida de un usuario borrado o inactivo generaría un bucle
-  // con requireUser(). La página de login verifica contra la base.
-  if (pathname === "/login") return NextResponse.next();
+  // Rutas de ingreso públicas: /login, /login/clinica y los links de cada clínica (/c/<slug>/…).
+  // No redirigen por cookie: una cookie válida de un usuario borrado, inactivo o de una clínica suspendida
+  // generaría un bucle con requireUser(). Cada página verifica contra la base.
+  if (pathname === "/login" || pathname.startsWith("/login/") || pathname.startsWith("/c/")) return NextResponse.next();
   if (!session) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }

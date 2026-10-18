@@ -1,4 +1,6 @@
-// Seed de desarrollo: clínica oftalmológica demo con staff, médicos, agenda, pacientes, turnos y chats.
+// Seed de desarrollo: plataforma + dos clínicas (multi-clínica, Hito 4). "Centro Oftalmológico Demo" tiene dos
+// sedes y todos los datos de demo; "Visión Sur" es una segunda clínica aislada donde el Dr. Rossi tiene otra cuenta
+// con el mismo email (para probar la elección de clínica al ingresar).
 // Es destructivo: vacía todas las tablas antes de cargar. Nunca correr contra producción.
 // Los turnos se calculan sobre los horarios reales de cada médico, relativos a la fecha actual.
 import "dotenv/config";
@@ -22,7 +24,13 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
-type Schedule = { dayOfWeek: number; startTime: string; endTime: string }[];
+type LocationKey = "palermo" | "belgrano";
+type Schedule = { dayOfWeek: number; startTime: string; endTime: string; location: LocationKey; consultorio: string }[];
+
+const locations: Record<LocationKey, { name: string; address: string; phone: string }> = {
+  palermo: { name: "Palermo", address: "Av. Santa Fe 1234, Piso 3, CABA", phone: "+541148001234" },
+  belgrano: { name: "Belgrano", address: "Av. Cabildo 2040, 1° B, CABA", phone: "+541147805678" },
+};
 
 const doctors = [
   {
@@ -32,10 +40,15 @@ const doctors = [
     licenseNumber: "MN 123456",
     specialty: "Oftalmología General",
     appointmentDuration: 20,
-    consultorioNumber: "1",
     consultationFee: 45000,
-    // dayOfWeek: 0 = Domingo ... 6 = Sábado
-    schedule: [1, 2, 3, 4, 5].map((dayOfWeek) => ({ dayOfWeek, startTime: "09:00", endTime: "13:00" })),
+    // dayOfWeek: 0 = Domingo ... 6 = Sábado. Lun/Mié/Vie en Palermo, Mar/Jue en Belgrano.
+    schedule: [1, 2, 3, 4, 5].map((dayOfWeek) => ({
+      dayOfWeek,
+      startTime: "09:00",
+      endTime: "13:00",
+      location: dayOfWeek % 2 === 1 ? ("palermo" as const) : ("belgrano" as const),
+      consultorio: dayOfWeek % 2 === 1 ? "1" : "2",
+    })),
   },
   {
     key: "rossi",
@@ -44,12 +57,11 @@ const doctors = [
     licenseNumber: "MN 234567",
     specialty: "Retina y Vítreo",
     appointmentDuration: 30,
-    consultorioNumber: "2",
     consultationFee: 60000,
     schedule: [
-      { dayOfWeek: 1, startTime: "14:00", endTime: "19:00" },
-      { dayOfWeek: 3, startTime: "14:00", endTime: "19:00" },
-      { dayOfWeek: 5, startTime: "09:00", endTime: "13:00" },
+      { dayOfWeek: 1, startTime: "14:00", endTime: "19:00", location: "palermo", consultorio: "2" },
+      { dayOfWeek: 3, startTime: "14:00", endTime: "19:00", location: "palermo", consultorio: "2" },
+      { dayOfWeek: 5, startTime: "09:00", endTime: "13:00", location: "belgrano", consultorio: "1" },
     ],
   },
   {
@@ -59,12 +71,11 @@ const doctors = [
     licenseNumber: "MP 345678",
     specialty: "Oftalmopediatría y Estrabismo",
     appointmentDuration: 20,
-    consultorioNumber: "3",
     consultationFee: 50000,
     schedule: [
-      { dayOfWeek: 2, startTime: "10:00", endTime: "18:00" },
-      { dayOfWeek: 4, startTime: "10:00", endTime: "18:00" },
-      { dayOfWeek: 6, startTime: "09:00", endTime: "12:00" },
+      { dayOfWeek: 2, startTime: "10:00", endTime: "18:00", location: "belgrano", consultorio: "3" },
+      { dayOfWeek: 4, startTime: "10:00", endTime: "18:00", location: "belgrano", consultorio: "3" },
+      { dayOfWeek: 6, startTime: "09:00", endTime: "12:00", location: "palermo", consultorio: "3" },
     ],
   },
 ] as const;
@@ -96,14 +107,14 @@ type PatientKey = (typeof patients)[number]["key"];
  * Fecha del n-ésimo día de atención del médico: n >= 0 busca desde hoy (inclusive) hacia adelante,
  * n < 0 busca desde ayer hacia atrás. Devuelve el día y la hora de inicio de esa franja.
  */
-function workday(schedule: Schedule, n: number): { ymd: string; startTime: string } {
+function workday(schedule: Schedule, n: number): { ymd: string; startTime: string; location: LocationKey } {
   const step = n >= 0 ? 1 : -1;
   let remaining = n >= 0 ? n : -n - 1;
   let ymd = n >= 0 ? arToday() : addDays(arToday(), -1);
   for (;;) {
     const slot = schedule.find((s) => s.dayOfWeek === dayOfWeek(ymd));
     if (slot) {
-      if (remaining === 0) return { ymd, startTime: slot.startTime };
+      if (remaining === 0) return { ymd, startTime: slot.startTime, location: slot.location };
       remaining--;
     }
     ymd = addDays(ymd, step);
@@ -124,6 +135,7 @@ async function wipe() {
   await prisma.availabilitySchedule.deleteMany();
   await prisma.doctorProfile.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.location.deleteMany();
   await prisma.invoiceConfig.deleteMany();
   await prisma.clinic.deleteMany();
 }
@@ -137,6 +149,7 @@ async function main() {
   const clinic = await prisma.clinic.create({
     data: {
       name: "Centro Oftalmológico Demo",
+      slug: "centro-demo",
       cuit: "30-71234567-1",
       address: "Av. Santa Fe 1234, Piso 3, CABA",
       phone: "+541148001234",
@@ -149,6 +162,7 @@ async function main() {
           taxType: "MONOTRIBUTO",
         },
       },
+      locations: { create: Object.values(locations) },
       users: {
         create: [
           { email: "admin@lucia.local", fullName: "Admin Clínica", role: Role.ADMIN, passwordHash },
@@ -157,6 +171,15 @@ async function main() {
         ],
       },
     },
+    include: { locations: true },
+  });
+  const loc = Object.fromEntries(
+    (Object.keys(locations) as LocationKey[]).map((k) => [k, clinic.locations.find((l) => l.name === locations[k].name)!.id]),
+  ) as Record<LocationKey, string>;
+
+  // Plataforma: equipo de LUCIA, sin clínica (PRD §4.7).
+  await prisma.user.create({
+    data: { clinicId: null, email: "plataforma@lucia.local", fullName: "Equipo LUCIA", role: Role.PLATFORM_ADMIN, passwordHash },
   });
 
   const doc = {} as Record<DoctorKey, { id: string; duration: number; fee: number; schedule: Schedule }>;
@@ -169,7 +192,13 @@ async function main() {
         role: Role.MEDICO,
         passwordHash,
         doctorProfile: {
-          create: { clinicId: clinic.id, ...profile, availabilities: { create: [...schedule] } },
+          create: {
+            clinicId: clinic.id,
+            ...profile,
+            availabilities: {
+              create: schedule.map(({ location, consultorio, ...range }) => ({ ...range, locationId: loc[location], consultorioNumber: consultorio })),
+            },
+          },
         },
       },
       include: { doctorProfile: true },
@@ -215,13 +244,14 @@ async function main() {
 
   for (const a of appointments) {
     const d = doc[a.doctor];
-    const { ymd, startTime } = workday(d.schedule, a.day);
+    const { ymd, startTime, location } = workday(d.schedule, a.day);
     const start = addMinutes(arDateTime(ymd, startTime), a.slot * d.duration);
     const appointment = await prisma.appointment.create({
       data: {
         clinicId: clinic.id,
         patientId: pat[a.patient],
         doctorId: d.id,
+        locationId: loc[location],
         startDateTime: start,
         endDateTime: addMinutes(start, d.duration),
         status: a.status,
@@ -352,7 +382,91 @@ async function main() {
     });
   }
 
+  // ---------------------------------------------------------------- Segunda clínica (aislada)
+  const visionSur = await prisma.clinic.create({
+    data: {
+      name: "Visión Sur",
+      slug: "vision-sur",
+      cuit: "30-70999888-4",
+      address: "Av. Hipólito Yrigoyen 8700, Lomas de Zamora",
+      phone: "+541142451122",
+      whatsappNumberId: "100000000000002",
+      locations: { create: [{ name: "Lomas de Zamora", address: "Av. Hipólito Yrigoyen 8700, Lomas de Zamora", phone: "+541142451122" }] },
+      users: {
+        create: [
+          { email: "admin@visionsur.local", fullName: "Admin Visión Sur", role: Role.ADMIN, passwordHash },
+          { email: "secretaria@visionsur.local", fullName: "Rocío Recepción", role: Role.SECRETARIA, passwordHash },
+        ],
+      },
+    },
+    include: { locations: true },
+  });
+  const lomas = visionSur.locations[0].id;
+
+  // Mismo médico que en la clínica demo, con una cuenta independiente (mismo email, misma contraseña).
+  const rossiSur = await prisma.user.create({
+    data: {
+      clinicId: visionSur.id,
+      email: "martin.rossi@lucia.local",
+      fullName: "Dr. Martín Rossi",
+      role: Role.MEDICO,
+      passwordHash,
+      doctorProfile: {
+        create: {
+          clinicId: visionSur.id,
+          licenseNumber: "MN 234567",
+          specialty: "Retina y Vítreo",
+          appointmentDuration: 30,
+          consultationFee: 55000,
+          availabilities: {
+            create: [2, 4].map((dayOfWeek) => ({ dayOfWeek, startTime: "09:00", endTime: "13:00", locationId: lomas, consultorioNumber: "A" })),
+          },
+        },
+      },
+    },
+    include: { doctorProfile: true },
+  });
+
+  const surPatients = await Promise.all(
+    [
+      // Mismo celular que una paciente de la clínica demo: en cada clínica es un registro independiente.
+      { phoneNumber: "+5491140001001", firstName: "Sofía", lastName: "Gómez", dni: "35123456", healthInsurance: "OSDE", currentStage: S.TURNO_CONFIRMADO, utmSource: "organic" },
+      { phoneNumber: "+5491150002001", firstName: "Ana", lastName: "Ruiz", dni: "30111222", healthInsurance: "IOMA", currentStage: S.EN_CONVERSACION_IA, utmSource: "facebook" },
+      { phoneNumber: "+5491150002002", firstName: "Pedro", lastName: "Sosa", dni: "25333444", healthInsurance: "PAMI", currentStage: S.NUEVO_LEAD, utmSource: "google_ads" },
+    ].map((data) => prisma.patient.create({ data: { ...data, clinicId: visionSur.id } })),
+  );
+  const rossiSurDays = [2, 4].map((dayOfWeek) => ({ dayOfWeek, startTime: "09:00", endTime: "13:00", location: "palermo" as const, consultorio: "A" }));
+  const surDay = workday(rossiSurDays, 0);
+  const surStart = arDateTime(surDay.ymd, surDay.startTime);
+  await prisma.appointment.create({
+    data: {
+      clinicId: visionSur.id,
+      patientId: surPatients[0].id,
+      doctorId: rossiSur.doctorProfile!.id,
+      locationId: lomas,
+      startDateTime: surStart,
+      endDateTime: addMinutes(surStart, 30),
+      status: A.CONFIRMED,
+      reason: "Control de retina (Visión Sur)",
+    },
+  });
+  await prisma.conversation.create({
+    data: {
+      patientId: surPatients[1].id,
+      createdAt: addMinutes(now, -30),
+      lastMessageAt: addMinutes(now, -28),
+      messages: {
+        create: [
+          { sender: M.PATIENT, text: "Hola, ¿atienden en Lomas?", createdAt: addMinutes(now, -30) },
+          { sender: M.AI_LUCIA, text: "¡Hola! Sí, estamos en Av. Hipólito Yrigoyen 8700, Lomas de Zamora. ¿Querés sacar un turno?", createdAt: addMinutes(now, -28) },
+        ],
+      },
+    },
+  });
+
   const counts = {
+    clinicas: await prisma.clinic.count(),
+    sedes: await prisma.location.count(),
     usuarios: await prisma.user.count(),
     medicos: await prisma.doctorProfile.count(),
     horarios: await prisma.availabilitySchedule.count(),

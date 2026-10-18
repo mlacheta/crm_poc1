@@ -22,6 +22,7 @@ export type InboundMessage = {
 export type InboundOutcome =
   | { status: "DUPLICATE" }
   | { status: "PAUSED"; conversationId: string; patientId: string }
+  | { status: "SUSPENDED"; conversationId: string; patientId: string }
   | { status: "REPLIED"; conversationId: string; patientId: string; delivery: string };
 
 /** Etapas desde las que un mensaje nuevo del paciente reabre la conversación con LUCIA. */
@@ -72,6 +73,12 @@ export async function handleInboundMessage(msg: InboundMessage, now = new Date()
       },
     }),
   ]);
+
+  // Clínica suspendida (PRD §4.7): el mensaje queda registrado pero LUCIA no responde.
+  const clinic = await prisma.clinic.findUniqueOrThrow({ where: { id: msg.clinicId }, select: { status: true } });
+  if (clinic.status !== "ACTIVE") {
+    return { status: "SUSPENDED", conversationId: conversation.id, patientId: patient.id };
+  }
 
   if (isLuciaPaused(conversation, now)) {
     return { status: "PAUSED", conversationId: conversation.id, patientId: patient.id };

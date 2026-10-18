@@ -9,9 +9,11 @@ export const SECTIONS = [
   { href: "/pacientes", label: "Pacientes", roles: ["ADMIN", "MEDICO"] },
   { href: "/marketing", label: "Marketing", roles: ["ADMIN", "MARKETING"] },
   { href: "/admin", label: "Configuración", roles: ["ADMIN"] },
+  { href: "/plataforma", label: "Clínicas", roles: ["PLATFORM_ADMIN"] },
 ] as const satisfies readonly { href: string; label: string; roles: readonly Role[] }[];
 
 export const ROLE_LABELS: Record<Role, string> = {
+  PLATFORM_ADMIN: "Plataforma LUCIA",
   ADMIN: "Administración",
   SECRETARIA: "Secretaría",
   MEDICO: "Médico",
@@ -25,6 +27,9 @@ export function sectionsFor(role: Role) {
 export function homeFor(role: Role): string {
   return sectionsFor(role)[0]?.href ?? "/login";
 }
+
+/** Roles que el administrador de una clínica puede asignar (la plataforma no se asigna desde una clínica). */
+export const CLINIC_ROLES = ["ADMIN", "SECRETARIA", "MEDICO", "MARKETING"] as const;
 
 /** ¿Puede `role` acceder a `pathname`? Rutas fuera de SECTIONS no se restringen por rol. */
 export function canAccessPath(role: Role, pathname: string): boolean {

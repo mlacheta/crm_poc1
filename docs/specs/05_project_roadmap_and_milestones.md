@@ -7,7 +7,7 @@
 
 1. Cada funcionalidad se especifica **antes** de implementarse: requisito en el PRD (spec 01), datos en la spec 03, integraciones y LUCIA en la spec 04, y su hito en este documento con alcance y criterios de aceptación.
 2. Las specs son documentos vivos: se amplían a medida que el producto avanza. Un agregado indica qué partes ya construidas afecta y cómo se migran.
-3. Cada hito se cierra cuando cumple sus criterios de aceptación, con pruebas E2E y casos en `qa/manual_tests.md`.
+3. Cada hito se cierra cuando cumple sus criterios de aceptación, con pruebas E2E en `qa/e2e/` (`npm run test:e2e`) y casos en `qa/manual_tests.md`.
 
 **Orden de prioridades:** primero toda la funcionalidad de operación (clínicas, pacientes, agenda, canales de reserva, recordatorios); **después todo lo referente a cobros** (Mercado Pago, coberturas y facturación).
 
@@ -19,8 +19,8 @@
 | 2 | CRM y vistas por rol | Hecho |
 | 3 | Agente LUCIA, conector WhatsApp y simulador | Hecho |
 | 3.5 | Identidad visual (logo y paleta clínica) | Hecho |
-| 4 | Multi-clínica (SaaS) y sedes | Especificado — **próximo** |
-| 5 | Contactos y pacientes | Especificado |
+| 4 | Multi-clínica (SaaS) y sedes | Hecho |
+| 5 | Contactos y pacientes | Especificado — **próximo** |
 | 6 | Agenda y turnos en el CRM | Especificado |
 | 7 | Portal web de la clínica | Especificado |
 | 8 | Identificación del paciente por WhatsApp | Especificado |

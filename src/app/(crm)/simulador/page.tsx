@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SIMULATOR_UTM_SOURCE } from "@/lib/simulator";
 import { llmConfig } from "@/lib/agent/model";
 import { APPOINTMENT_STATUS_LABELS } from "@/lib/appointments";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { isLuciaPaused } from "@/lib/conversations";
 import { formatDateTime, formatTime, patientName } from "@/lib/format";
 import { STAGE_LABELS } from "@/lib/pipeline";
@@ -18,7 +18,7 @@ import { AutoScrollList } from "./auto-scroll-list";
 import { SimulatorComposer } from "./simulator-composer";
 
 export default async function SimuladorPage({ searchParams }: PageProps<"/simulador">) {
-  const user = await requireUser(["ADMIN", "SECRETARIA"]);
+  const user = await requireClinicUser(["ADMIN", "SECRETARIA"]);
   const { tel } = await searchParams;
   const phone = typeof tel === "string" && SIMULATOR_PHONE.test(tel) ? tel : null;
   const { provider, model } = llmConfig();

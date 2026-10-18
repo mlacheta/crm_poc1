@@ -1,6 +1,7 @@
 // Conversa con LUCIA desde la terminal usando el mismo motor que el webhook (canal SIMULATOR).
 // Uso: npm run chat -- "Hola, quiero un turno" "1"
 //      CHAT_PHONE=+5490000000001 npm run chat -- "¿Atienden por OSDE?"
+//      CHAT_CLINIC=vision-sur npm run chat -- "Hola"   (slug de la clínica; por defecto, la clínica demo)
 // Cada ejecución sin CHAT_PHONE usa un número de prueba nuevo.
 import "dotenv/config";
 import { handleInboundMessage } from "../src/lib/agent/engine";
@@ -14,7 +15,7 @@ async function main() {
     console.log('Uso: npm run chat -- "mensaje 1" "mensaje 2" ...');
     return;
   }
-  const clinic = await prisma.clinic.findFirstOrThrow();
+  const clinic = await prisma.clinic.findUniqueOrThrow({ where: { slug: process.env.CHAT_CLINIC ?? "centro-demo" } });
   const phone = process.env.CHAT_PHONE ?? `+54900${Date.now().toString().slice(-8)}`;
   const { provider, model } = llmConfig();
   console.log(`LUCIA · ${provider}/${model} · paciente ${phone}\n`);

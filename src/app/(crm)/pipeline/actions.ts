@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { PipelineStage } from "@/generated/prisma/enums";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
 
 const MoveSchema = z.object({
@@ -12,7 +12,7 @@ const MoveSchema = z.object({
 });
 
 export async function movePatientStage(patientId: string, stage: PipelineStage) {
-  const user = await requireUser(["ADMIN", "SECRETARIA"]);
+  const user = await requireClinicUser(["ADMIN", "SECRETARIA"]);
   const input = MoveSchema.parse({ patientId, stage });
 
   const { count } = await prisma.patient.updateMany({

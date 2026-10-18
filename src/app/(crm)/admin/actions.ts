@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { DAY_NAMES } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
@@ -38,7 +38,7 @@ const ClinicSchema = z.object({
 });
 
 export async function updateClinic(_prev: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser(["ADMIN"]);
+  const user = await requireClinicUser(["ADMIN"]);
   const parsed = ClinicSchema.safeParse({
     ...Object.fromEntries(formData),
     autoInvoiceOnPay: formData.get("autoInvoiceOnPay") === "on",
@@ -54,7 +54,9 @@ export async function updateClinic(_prev: FormState, formData: FormData): Promis
     });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      return { error: "Ya existe otra clínica con ese CUIT." };
+      // whatsappNumberId es único: el webhook asigna cada mensaje a una sola clínica (spec 02 §4.4).
+      const field = JSON.stringify(e.meta ?? {});
+      return { error: field.includes("whatsappNumberId") ? "Ese Phone Number ID ya está asignado a otra clínica." : "Ya existe otra clínica con ese CUIT." };
     }
     throw e;
   }
@@ -70,7 +72,6 @@ const DoctorSchema = z.object({
   fullName: z.string().trim().min(3),
   licenseNumber: z.string().trim().min(3),
   specialty: z.string().trim().min(3),
-  consultorioNumber: optional,
   appointmentDuration: z.coerce.number().int().min(5).max(240),
   consultationFee: z.coerce.number().min(0).max(100_000_000),
 });
@@ -80,26 +81,41 @@ const NewDoctorSchema = DoctorSchema.extend({
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
 });
 
-/** Lee los 7 días del formulario de horarios: una franja por día activo. */
-function parseSchedule(formData: FormData) {
-  const rows: { dayOfWeek: number; startTime: string; endTime: string }[] = [];
-  for (let day = 0; day < 7; day++) {
-    if (formData.get(`day-${day}-active`) !== "on") continue;
-    const parsed = z
-      .object({ startTime: time, endTime: time })
-      .refine((r) => r.startTime < r.endTime, "La hora de inicio debe ser anterior al fin")
-      .safeParse({ startTime: formData.get(`day-${day}-start`), endTime: formData.get(`day-${day}-end`) });
-    if (!parsed.success) return { error: `Horario ${DAY_NAMES[day]}: ${parsed.error.issues[0].message}` };
-    rows.push({ dayOfWeek: day, ...parsed.data });
+type ScheduleRow = { locationId: string; consultorioNumber: string | null; dayOfWeek: number; startTime: string; endTime: string };
+
+/**
+ * Lee el horario por sede del formulario (PRD §4.7): para cada sede activa de la clínica, su consultorio y una
+ * franja por día. Un médico no puede tener franjas superpuestas el mismo día, ni siquiera en sedes distintas.
+ */
+async function parseSchedule(formData: FormData, clinicId: string): Promise<{ rows: ScheduleRow[] } | { error: string }> {
+  const sites = await prisma.location.findMany({ where: { clinicId, isActive: true }, select: { id: true, name: true } });
+  const rows: ScheduleRow[] = [];
+  for (const site of sites) {
+    const prefix = `loc-${site.id}`;
+    const consultorioNumber = String(formData.get(`${prefix}-consultorio`) ?? "").trim() || null;
+    for (let day = 0; day < 7; day++) {
+      if (formData.get(`${prefix}-day-${day}-active`) !== "on") continue;
+      const parsed = z
+        .object({ startTime: time, endTime: time })
+        .refine((r) => r.startTime < r.endTime, "La hora de inicio debe ser anterior al fin")
+        .safeParse({ startTime: formData.get(`${prefix}-day-${day}-start`), endTime: formData.get(`${prefix}-day-${day}-end`) });
+      if (!parsed.success) return { error: `Horario ${site.name}, ${DAY_NAMES[day]}: ${parsed.error.issues[0].message}` };
+      const clash = rows.find((r) => r.dayOfWeek === day && r.startTime < parsed.data.endTime && parsed.data.startTime < r.endTime);
+      if (clash) {
+        const other = sites.find((x) => x.id === clash.locationId)?.name;
+        return { error: `${DAY_NAMES[day]}: el horario de ${site.name} se superpone con el de ${other}.` };
+      }
+      rows.push({ locationId: site.id, consultorioNumber, dayOfWeek: day, ...parsed.data });
+    }
   }
   return { rows };
 }
 
 export async function updateDoctor(doctorId: string, _prev: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser(["ADMIN"]);
+  const user = await requireClinicUser(["ADMIN"]);
   const parsed = DoctorSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: firstError(parsed.error) };
-  const schedule = parseSchedule(formData);
+  const schedule = await parseSchedule(formData, user.clinicId);
   if ("error" in schedule) return { error: schedule.error };
 
   const doctor = await prisma.doctorProfile.findFirst({ where: { id: doctorId, clinicId: user.clinicId } });
@@ -117,10 +133,10 @@ export async function updateDoctor(doctorId: string, _prev: FormState, formData:
 }
 
 export async function createDoctor(_prev: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser(["ADMIN"]);
+  const user = await requireClinicUser(["ADMIN"]);
   const parsed = NewDoctorSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: firstError(parsed.error) };
-  const schedule = parseSchedule(formData);
+  const schedule = await parseSchedule(formData, user.clinicId);
   if ("error" in schedule) return { error: schedule.error };
 
   const { fullName, email, password, ...profile } = parsed.data;
@@ -132,6 +148,7 @@ export async function createDoctor(_prev: FormState, formData: FormData): Promis
         fullName,
         role: "MEDICO",
         passwordHash: await bcrypt.hash(password, 10),
+        mustChangePassword: true, // Contraseña inicial (PRD §4.7)
         doctorProfile: {
           create: { clinicId: user.clinicId, ...profile, availabilities: { create: schedule.rows } },
         },
@@ -139,7 +156,7 @@ export async function createDoctor(_prev: FormState, formData: FormData): Promis
     });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      return { error: "Ya existe un usuario con ese email." };
+      return { error: "Ya existe un usuario con ese email en esta clínica." };
     }
     throw e;
   }

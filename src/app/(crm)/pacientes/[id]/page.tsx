@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_VARIANT } from "@/lib/appointments";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { formatDate, formatDateTime, patientName } from "@/lib/format";
 import { STAGE_LABELS, STAGE_VARIANT } from "@/lib/pipeline";
 import { prisma } from "@/lib/prisma";
 
 export default async function PacientePage({ params }: PageProps<"/pacientes/[id]">) {
-  const user = await requireUser(["ADMIN", "MEDICO"]);
+  const user = await requireClinicUser(["ADMIN", "MEDICO"]);
   const { id } = await params;
   const doctorId = user.role === "MEDICO" ? user.doctorProfile?.id : undefined;
   if (user.role === "MEDICO" && !doctorId) notFound();
@@ -18,7 +18,7 @@ export default async function PacientePage({ params }: PageProps<"/pacientes/[id
     include: {
       appointments: {
         orderBy: { startDateTime: "desc" },
-        include: { doctor: { include: { user: { select: { fullName: true } } } } },
+        include: { doctor: { include: { user: { select: { fullName: true } } } }, location: { select: { name: true } } },
       },
       medicalRecords: {
         orderBy: { consultationDate: "desc" },
@@ -71,7 +71,7 @@ export default async function PacientePage({ params }: PageProps<"/pacientes/[id
                 <div key={a.id} className="flex flex-wrap items-start justify-between gap-2 border-b pb-3 last:border-b-0 last:pb-0">
                   <div>
                     <p className="font-medium">
-                      {formatDateTime(a.startDateTime)} · {a.doctor.user.fullName}
+                      {formatDateTime(a.startDateTime)} · {a.doctor.user.fullName} · {a.location.name}
                     </p>
                     <p className="text-muted-foreground">Motivo: {a.reason ?? "—"}</p>
                   </div>

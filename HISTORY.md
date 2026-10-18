@@ -4,12 +4,15 @@
 > y en "Decisiones" sólo lo que no se deduce del código ni de `docs/specs/`. Borrar lo obsoleto.
 
 ## Estado (2026-10-17)
-- Hitos 1, 2, 3 y 3.5 hechos. **Roadmap renumerado (spec 05, con tabla de estado, dependencias y equivalencias):** 4 multi-clínica + sedes (**próximo**) → 5 contactos y pacientes → 6 agenda y turnos → 7 portal web → 8 identificación por WhatsApp → 9 Google Calendar médicos → 10 recordatorios → 11 cobros (Mercado Pago + coberturas) → 12 ARCA → 13 historia clínica (postergado). Regla: todo lo de cobros va después de lo funcional; desde el Hito 6 los turnos se confirman al reservar y se cobran en la clínica.
+- Hitos 1, 2, 3, 3.5 y **4 (multi-clínica + sedes)** hechos. **Próximo: Hito 5** (contactos y pacientes). Orden (spec 05): 5 → 6 agenda y turnos → 7 portal web → 8 identificación WhatsApp → 9 Google Calendar → 10 recordatorios → 11 cobros (MP + coberturas) → 12 ARCA → 13 postergado. Cobros al final; desde el Hito 6 los turnos se confirman al reservar.
+- Hito 4: rol `PLATFORM_ADMIN` (`/plataforma`, sin PHI); `requireClinicUser`/`requirePlatformUser` en `src/lib/auth/dal.ts` (clínica suspendida → sin sesión; `mustChangePassword` → `/cuenta/clave`). Login: si email+clave coinciden en varias clínicas, cookie `lucia_clinic_choice` (5 min) → `/login/clinica`; link `/c/<slug>/equipo`. Contraseñas iniciales generadas (`src/lib/auth/passwords.ts`), se muestran una vez. Sedes: `Location`, horario por sede (`AvailabilitySchedule.locationId` + consultorio), turno con `locationId`; filtros por sede con `ParamPicker`. Seed: 2 clínicas (demo con Palermo/Belgrano; Visión Sur) + Rossi con cuenta en ambas + `plataforma@lucia.local`.
+- **E2E en el repo** (`qa/e2e/`, `npm run test:e2e`; app en :3123 con `LLM_PROVIDER=mock`). Los scripts del scratchpad se perdieron: nunca dejar pruebas fuera del repo. `qa/e2e/console-sweep.mjs` revisa advertencias de consola en modo dev.
+- Tras una migración, reiniciar `npm run dev` (el cliente Prisma en memoria queda viejo).
 - Todo commiteado en `develop`. LUCIA probada con Gemini (free tier): tools OK en reserva, urgencia, guardrail, médico/día, derivación. Free tier = 5 req/min/modelo + 503 frecuentes → no apto producción. Usar `LLM_MODEL=gemini-3.7-flash` (3.8 y flash-latest comparten cuota).
 - Decidido: LUCIA no da consejos de alivio, sólo deriva a consulta (en prompt). Cobro según **tabla de coberturas por obra social y plan** (PRD §4.4.1, spec 03 §3, spec 04 `check_coverage`): especificada, se implementa en Hito 11. Pendiente: reintegro de seña y reglas para estudios/prácticas.
 - Decidido: identidad del paciente = nombre + apellido + DNI + sexo; el celular NO identifica (puede cambiar de dueño). Se separa **Contacto** (quien escribe, por celular/email) de **Paciente**; un contacto saca turnos para otros validando sus 4 datos (spec 03 §5, refactor en Hito 5).
 - Decidido: ingreso web con código SÓLO por email; el contacto edita sólo pacientes que registró (no nombre/DNI/sexo); evento de Google Calendar del médico sin motivo ni datos clínicos; corte mañana/tarde 13:00 configurable. Pendientes menores: reintegro de seña, coberturas de estudios, punto de venta ARCA por sede.
-- Deploy demo **publicado**: https://crm-poc1.vercel.app (Vercel gru1 + Neon sa-east-1, LUCIA mock; probado 2026-10-05). Guía `docs/deploy.md`; número real de WhatsApp: `docs/whatsapp-produccion.md`. `vercel.json` corre `prisma migrate deploy` en el build; `prisma.config.ts` usa `DATABASE_URL_UNPOOLED` para migraciones. Base remota: `npm run demo:db [-- --seed]` con `.env.demo`. Rama de producción: `main`.
+- Deploy demo **publicado**: https://crm-poc1.vercel.app (Vercel gru1 + Neon sa-east-1, LUCIA mock; probado 2026-10-05). **Pendiente tras el Hito 4:** push a main (el build migra Neon) + `npm run demo:db -- --seed`. Guía `docs/deploy.md`; número real de WhatsApp: `docs/whatsapp-produccion.md`. `vercel.json` corre `prisma migrate deploy` en el build; `prisma.config.ts` usa `DATABASE_URL_UNPOOLED` para migraciones. Base remota: `npm run demo:db [-- --seed]` con `.env.demo`. Rama de producción: `main`.
 - QA manual por rol en `qa/manual_tests.md` (mantener al agregar funcionalidad).
 
 ## Stack y comandos
@@ -30,7 +33,6 @@ Next 16 (App Router, `after()` en webhooks, `src/proxy.ts` = ex-middleware) · T
 - Esquema: +`DoctorProfile.consultationFee` (también en spec 03). Horarios: 1 franja por día en el form de admin.
 - Estilos: paleta clínica sólo como tokens en `globals.css` (`--primary`, `--success`, `--warning`, `--brand-accent`…); no usar hex ni colores Tailwind sueltos. Logo: `src/components/brand/lucia-logo.tsx` (+ `public/brand/*.svg`, `src/app/icon.svg`). Badges de estado: `STAGE_VARIANT` / `APPOINTMENT_STATUS_VARIANT`.
 - Seed destructivo; turnos calculados sobre los horarios reales de cada médico relativos a hoy.
-- Tests E2E: no hay suite en el repo; se probó con playwright-core + Chrome local desde el scratchpad.
 
 ## Log
 - Hito 1 (`c3eca75`): scaffold Next, docker, esquema Prisma de spec 03, seed demo.

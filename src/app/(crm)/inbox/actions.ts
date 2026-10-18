@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { HUMAN_TAKEOVER_MINUTES } from "@/lib/conversations";
 import { addMinutes } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppText } from "@/lib/whatsapp/client";
 
 async function authorizeConversation(conversationId: string) {
-  const user = await requireUser(["ADMIN", "SECRETARIA"]);
+  const user = await requireClinicUser(["ADMIN", "SECRETARIA"]);
   const id = z.uuid().parse(conversationId);
   const conv = await prisma.conversation.findFirst({
     where: { id, patient: { clinicId: user.clinicId } },

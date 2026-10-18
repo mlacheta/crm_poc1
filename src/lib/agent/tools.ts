@@ -4,6 +4,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { arToday } from "@/lib/dates";
 import { formatARS, formatDate, formatTime } from "@/lib/format";
+import { activeLocations } from "@/lib/locations";
 import { prisma } from "@/lib/prisma";
 import { findAvailableSlots, holdSlot } from "@/lib/scheduling";
 import { ACCEPTED_HEALTH_INSURANCES, HOURS_NOTE, STUDY_PREPARATION } from "./clinic-knowledge";
@@ -33,11 +34,12 @@ export function createLuciaTools(ctx: AgentContext) {
         "Consulta los turnos libres de consulta oftalmológica en un rango de fechas. Usala SIEMPRE antes de ofrecer horarios; nunca inventes turnos.",
       inputSchema: z.object({
         doctorId: z.string().optional().describe("ID del médico preferido (opcional)"),
+        locationId: z.string().optional().describe("ID de la sede preferida (opcional; sin ella busca en todas)"),
         fromDate: ymd.describe("Fecha inicial (YYYY-MM-DD, hora Argentina)"),
         toDate: ymd.optional().describe("Fecha límite (YYYY-MM-DD). Por defecto, 7 días desde fromDate"),
       }),
-      execute: async ({ doctorId, fromDate, toDate }) => {
-        const slots = await findAvailableSlots({ clinicId: ctx.clinicId, doctorId, fromYmd: fromDate, toYmd: toDate, now: ctx.now });
+      execute: async ({ doctorId, locationId, fromDate, toDate }) => {
+        const slots = await findAvailableSlots({ clinicId: ctx.clinicId, doctorId, locationId, fromYmd: fromDate, toYmd: toDate, now: ctx.now });
         // Variedad: hasta 3 turnos por médico, en orden cronológico.
         const perDoctor = new Map<string, number>();
         const picked = slots.filter((s) => {
@@ -51,6 +53,10 @@ export function createLuciaTools(ctx: AgentContext) {
             doctorId: s.doctorId,
             doctor: s.doctorName,
             specialty: s.specialty,
+            locationId: s.locationId,
+            sede: s.locationName,
+            address: s.locationAddress,
+            consultorio: s.consultorio,
             date: arToday(s.start),
             day: formatDate(s.start),
             time: formatTime(s.start),
@@ -95,6 +101,8 @@ export function createLuciaTools(ctx: AgentContext) {
           ok: true,
           appointmentId: result.appointmentId,
           doctor: result.slot.doctorName,
+          sede: result.slot.locationName,
+          address: result.slot.locationAddress,
           day: formatDate(result.slot.start),
           time: formatTime(result.slot.start),
           fee: formatARS(result.slot.fee),
@@ -169,8 +177,15 @@ export function createLuciaTools(ctx: AgentContext) {
           include: { doctors: { include: { user: { select: { fullName: true } } } } },
         });
         switch (topic) {
-          case "UBICACION":
-            return { name: clinic.name, address: clinic.address, phone: clinic.phone, note: HOURS_NOTE };
+          case "UBICACION": {
+            const sedes = await activeLocations(ctx.clinicId);
+            return {
+              name: clinic.name,
+              sedes: sedes.map((l) => ({ name: l.name, address: l.address })),
+              phone: clinic.phone,
+              note: HOURS_NOTE,
+            };
+          }
           case "OBRAS_SOCIALES":
             return { accepted: ACCEPTED_HEALTH_INSURANCES, particular: "También se atiende en forma particular." };
           case "ESTUDIOS_PREPARACION":

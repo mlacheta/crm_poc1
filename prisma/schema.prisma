@@ -15,24 +15,33 @@ datasource db {
 // ----------------------------------------------------
 
 enum Role {
+  PLATFORM_ADMIN // Equipo LUCIA: sin clínica, sin acceso a datos de pacientes (PRD §4.7)
   ADMIN
   SECRETARIA
   MEDICO
   MARKETING
 }
 
+enum ClinicStatus {
+  ACTIVE
+  SUSPENDED // Nadie ingresa y LUCIA no responde
+}
+
 model Clinic {
-  id               String   @id @default(uuid())
+  id               String       @id @default(uuid())
   name             String
-  cuit             String   @unique
-  address          String
+  slug             String       @unique // Link de la clínica: /c/<slug>
+  status           ClinicStatus @default(ACTIVE)
+  cuit             String       @unique
+  address          String // Dirección fiscal / principal; las sedes tienen la suya
   phone            String
-  whatsappNumberId String? // ID de número de teléfono en Meta Cloud API
+  whatsappNumberId String?      @unique // ID de número de teléfono en Meta Cloud API
   wabaId           String? // WhatsApp Business Account ID
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   users         User[]
+  locations     Location[]
   doctors       DoctorProfile[]
   patients      Patient[]
   appointments  Appointment[]
@@ -40,18 +49,39 @@ model Clinic {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  clinicId     String
-  clinic       Clinic   @relation(fields: [clinicId], references: [id])
-  email        String   @unique
-  passwordHash String
-  fullName     String
-  role         Role     @default(SECRETARIA)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  clinicId           String? // null sólo para PLATFORM_ADMIN
+  clinic             Clinic?  @relation(fields: [clinicId], references: [id])
+  email              String // Único por clínica: una persona puede tener cuentas en varias
+  passwordHash       String
+  fullName           String
+  role               Role     @default(SECRETARIA)
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(false) // Contraseña inicial: se cambia al ingresar
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   doctorProfile DoctorProfile?
+
+  @@unique([clinicId, email])
+  @@index([email])
+}
+
+/// Sede de una clínica (PRD §4.7). El paciente y el WhatsApp son de la clínica; horarios y turnos, de la sede.
+model Location {
+  id        String   @id @default(uuid())
+  clinicId  String
+  clinic    Clinic   @relation(fields: [clinicId], references: [id])
+  name      String // "Palermo", "Belgrano"
+  address   String
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  availabilities AvailabilitySchedule[]
+  appointments   Appointment[]
+
+  @@unique([clinicId, name])
 }
 
 model DoctorProfile {
@@ -63,7 +93,6 @@ model DoctorProfile {
   licenseNumber       String // Matrícula Nacional / Provincial
   specialty           String   @default("Oftalmología General")
   appointmentDuration Int      @default(20) // En minutos
-  consultorioNumber   String?
   consultationFee     Decimal  @default(45000) @db.Decimal(10, 2) // Arancel de consulta particular (ARS)
   createdAt           DateTime @default(now())
 
@@ -73,13 +102,16 @@ model DoctorProfile {
 }
 
 model AvailabilitySchedule {
-  id        String        @id @default(uuid())
-  doctorId  String
-  doctor    DoctorProfile @relation(fields: [doctorId], references: [id])
-  dayOfWeek Int // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
-  startTime String // "09:00"
-  endTime   String // "18:00"
-  isActive  Boolean       @default(true)
+  id                String        @id @default(uuid())
+  doctorId          String
+  doctor            DoctorProfile @relation(fields: [doctorId], references: [id])
+  locationId        String
+  location          Location      @relation(fields: [locationId], references: [id])
+  consultorioNumber String? // Consultorio del médico en esa sede
+  dayOfWeek         Int // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+  startTime         String // "09:00"
+  endTime           String // "18:00"
+  isActive          Boolean       @default(true)
 }
 
 // ----------------------------------------------------
@@ -186,13 +218,15 @@ enum AppointmentStatus {
 }
 
 model Appointment {
-  id        String        @id @default(uuid())
-  clinicId  String
-  clinic    Clinic        @relation(fields: [clinicId], references: [id])
-  patientId String
-  patient   Patient       @relation(fields: [patientId], references: [id])
-  doctorId  String
-  doctor    DoctorProfile @relation(fields: [doctorId], references: [id])
+  id         String        @id @default(uuid())
+  clinicId   String
+  clinic     Clinic        @relation(fields: [clinicId], references: [id])
+  patientId  String
+  patient    Patient       @relation(fields: [patientId], references: [id])
+  doctorId   String
+  doctor     DoctorProfile @relation(fields: [doctorId], references: [id])
+  locationId String
+  location   Location      @relation(fields: [locationId], references: [id])
 
   startDateTime   DateTime
   endDateTime     DateTime

@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm() {
+/** `clinicSlug`: ingreso desde el link de una clínica (/c/<slug>/equipo), que busca sólo en esa clínica. */
+export function LoginForm({ clinicSlug }: { clinicSlug?: string }) {
   const [state, action, pending] = useActionState(login, undefined);
   // Controlado: conserva el email tras un error (React resetea los campos no controlados al enviar).
   const [email, setEmail] = useState("");
 
   return (
     <form action={action} className="space-y-4">
+      {clinicSlug && <input type="hidden" name="clinicSlug" value={clinicSlug} />}
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input

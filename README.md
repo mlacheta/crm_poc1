@@ -47,10 +47,11 @@ npm run dev              # http://localhost:3000
 | :--- | :--- |
 | `db:up` / `db:down` | Inicia / detiene los contenedores (los datos persisten en volúmenes) |
 | `db:migrate` | `prisma migrate dev` — crea y aplica migraciones a partir de `prisma/schema.prisma` |
-| `db:seed` | Clínica demo: staff, 3 oftalmólogos con horarios y consultorios, 8 pacientes con obras sociales, turnos, pagos y conversaciones |
+| `db:seed` | Plataforma + 2 clínicas: la demo (sedes Palermo y Belgrano, 3 oftalmólogos, 14 pacientes, turnos, pagos y conversaciones) y Visión Sur |
 | `db:reset` | Borra la base, reaplica migraciones y vuelve a correr el seed |
 | `db:studio` | Abre Prisma Studio para explorar los datos |
 | `typecheck` | Genera los tipos de rutas de Next.js y corre `tsc` |
+| `test:e2e` | Pruebas E2E de `qa/e2e/` con Chrome (app en el puerto 3123 en modo mock; recarga el seed antes de cada suite) |
 
 ### Usuarios y vistas (Hito 2)
 
@@ -62,6 +63,9 @@ Ingresá en http://localhost:3000/login. Todos los usuarios del seed son `@lucia
 | `secretaria@` | Secretaría | Pipeline Kanban (drag-and-drop, filtros por médico y canal) e Inbox WhatsApp (pausar/reanudar LUCIA) |
 | `laura.mendez@`, `martin.rossi@`, `carolina.paz@` | Médico | Agenda del día, sus pacientes y ficha rápida con historia clínica |
 | `marketing@` | Marketing | Embudo de conversión y atribución UTM, sólo datos agregados (sin nombres ni diagnósticos) |
+| `plataforma@` | Plataforma | Alta, suspensión y métricas de clínicas, sin datos de pacientes |
+
+**Multi-clínica (Hito 4):** hay una segunda clínica, Visión Sur (`admin@visionsur.local`, `secretaria@visionsur.local`). El Dr. Rossi tiene cuenta en las dos: al ingresar elige la clínica. Cada clínica tiene su link de ingreso, `/c/<slug>/equipo` (ej. `/c/centro-demo/equipo`).
 
 El acceso se valida en dos capas: `src/proxy.ts` (redirección optimista por cookie) y `requireUser()` en cada página y server action (`src/lib/auth/dal.ts`). La matriz de permisos vive en `src/lib/auth/roles.ts`.
 

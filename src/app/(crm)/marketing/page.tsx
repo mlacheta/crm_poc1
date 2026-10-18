@@ -3,7 +3,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SIMULATOR_UTM_SOURCE } from "@/lib/simulator";
-import { requireUser } from "@/lib/auth/dal";
+import { ParamPicker } from "@/components/param-picker";
+import { requireClinicUser } from "@/lib/auth/dal";
+import { activeLocations } from "@/lib/locations";
 import { addDays, arDateTime, arToday } from "@/lib/dates";
 import { formatARS, formatPct } from "@/lib/format";
 import { utmLabel } from "@/lib/pipeline";
@@ -21,8 +23,10 @@ type Funnel = { leads: number; booked: number; paid: number; attended: number; r
 const emptyFunnel = (): Funnel => ({ leads: 0, booked: 0, paid: 0, attended: 0, revenue: 0 });
 
 export default async function MarketingPage({ searchParams }: PageProps<"/marketing">) {
-  const user = await requireUser(["ADMIN", "MARKETING"]);
-  const { periodo } = await searchParams;
+  const user = await requireClinicUser(["ADMIN", "MARKETING"]);
+  const { periodo, sede } = await searchParams;
+  const locations = await activeLocations(user.clinicId);
+  const locationId = typeof sede === "string" && locations.some((l) => l.id === sede) ? sede : undefined;
   const period = PERIODS.find((p) => p.value === periodo)?.value ?? "30";
   // Desde las 00:00 (hora AR) de hace N días
   const since = period === "todo" ? undefined : arDateTime(addDays(arToday(), -Number(period)));
@@ -34,10 +38,15 @@ export default async function MarketingPage({ searchParams }: PageProps<"/market
       // Los pacientes del simulador son datos de prueba: no cuentan en las métricas.
       OR: [{ utmSource: null }, { utmSource: { not: SIMULATOR_UTM_SOURCE } }],
       ...(since && { createdAt: { gte: since } }),
+      // Con una sede elegida, sólo cuentan los pacientes con turnos en esa sede (un lead sin turno no tiene sede).
+      ...(locationId && { appointments: { some: { locationId } } }),
     },
     select: {
       utmSource: true,
-      appointments: { select: { status: true, payment: { select: { status: true, amount: true } } } },
+      appointments: {
+        where: locationId ? { locationId } : undefined,
+        select: { status: true, payment: { select: { status: true, amount: true } } },
+      },
     },
   });
 
@@ -83,19 +92,35 @@ export default async function MarketingPage({ searchParams }: PageProps<"/market
           <h1 className="text-xl font-semibold">Marketing y adquisición</h1>
           <p className="text-sm text-muted-foreground">Leads ingresados en el período, con su avance en el embudo.</p>
         </div>
-        <nav aria-label="Período" className="flex gap-1">
-          {PERIODS.map((p) => (
-            <Link
-              key={p.value}
-              href={`/marketing?periodo=${p.value}`}
-              aria-current={p.value === period ? "page" : undefined}
-              className={buttonVariants({ variant: p.value === period ? "default" : "outline", size: "sm" })}
-            >
-              {p.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex flex-wrap items-center gap-2">
+          {locations.length > 1 && (
+            <ParamPicker
+              param="sede"
+              label="Filtrar por sede"
+              allLabel="Todas las sedes"
+              options={locations.map((l) => ({ value: l.id, label: l.name }))}
+              current={locationId ?? ""}
+            />
+          )}
+          <nav aria-label="Período" className="flex gap-1">
+            {PERIODS.map((p) => (
+              <Link
+                key={p.value}
+                href={`/marketing?periodo=${p.value}${locationId ? `&sede=${locationId}` : ""}`}
+                aria-current={p.value === period ? "page" : undefined}
+                className={buttonVariants({ variant: p.value === period ? "default" : "outline", size: "sm" })}
+              >
+                {p.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
+      {locationId && (
+        <p className="text-sm text-muted-foreground">
+          Con una sede elegida se cuentan sólo los pacientes con turnos en esa sede: los leads que todavía no reservaron no tienen sede.
+        </p>
+      )}
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((k) => (

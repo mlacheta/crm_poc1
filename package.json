@@ -17,7 +17,8 @@
     "db:studio": "prisma studio",
     "typecheck": "next typegen && tsc --noEmit",
     "chat": "tsx scripts/chat.ts",
-    "demo:db": "node scripts/remote-db.mjs"
+    "demo:db": "node scripts/remote-db.mjs",
+    "test:e2e": "node qa/e2e/run-all.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.71",
@@ -52,6 +53,7 @@
     "dotenv": "^18.0.5",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "playwright-core": "^1.63.0",
     "prisma": "7.10.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",

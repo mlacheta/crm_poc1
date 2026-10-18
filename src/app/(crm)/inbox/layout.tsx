@@ -1,11 +1,11 @@
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { isLuciaPaused } from "@/lib/conversations";
 import { formatDateTime, patientName } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { ConversationList } from "./conversation-list";
 
 export default async function InboxLayout({ children }: LayoutProps<"/inbox">) {
-  const user = await requireUser(["ADMIN", "SECRETARIA"]);
+  const user = await requireClinicUser(["ADMIN", "SECRETARIA"]);
 
   const conversations = await prisma.conversation.findMany({
     where: { patient: { clinicId: user.clinicId } },

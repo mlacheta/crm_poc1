@@ -1,19 +1,20 @@
-# Casos de prueba manuales — LUCIA CRM (Hitos 1 a 3.5)
+# Casos de prueba manuales — LUCIA CRM (Hitos 1 a 4)
 
 ## Preparación
 
 1. `npm run db:up` (Postgres + Redis) y `npm run dev` → http://localhost:3000
 2. **Antes de cada suite:** `npm run db:seed` para volver a los datos demo. Borra todo lo que se haya cambiado.
-3. Contraseña de todos los usuarios: `lucia1234`. Emails: `admin@`, `secretaria@`, `marketing@`, `laura.mendez@`, `martin.rossi@`, `carolina.paz@`, todos `@lucia.local`.
-4. Los turnos del seed son **relativos a la fecha de ejecución** y caen en los días de atención de cada médico:
+3. Contraseña de todos los usuarios: `lucia1234`. Emails de la clínica demo: `admin@`, `secretaria@`, `marketing@`, `laura.mendez@`, `martin.rossi@`, `carolina.paz@`, todos `@lucia.local`. Otra clínica y plataforma: ver sección 13. **El Dr. Rossi tiene cuenta en dos clínicas:** al ingresar por `/login` elige "Centro Oftalmológico Demo" para los casos de las secciones 1 a 12.
+4. Pruebas automáticas: con la app corriendo en el puerto 3123 en modo mock (`npm run build && LLM_PROVIDER=mock npx next start -p 3123`), `npm run test:e2e` corre las suites de `qa/e2e/` y recarga el seed antes de cada una.
+5. Los turnos del seed son **relativos a la fecha de ejecución** y caen en los días de atención de cada médico:
 
    | Médico | Atiende | Turnos del seed |
    | :--- | :--- | :--- |
-   | Dra. Laura Méndez (20 min) | Lun–Vie 09:00–13:00 | Sofía Gómez 09:20, próximo día de atención (incluye hoy) · Valentina López 10:00, el día de atención siguiente · Ricardo Martínez 10:20, último día de atención antes de hoy · Daniel Acosta 09:00, el anterior a ese |
-   | Dr. Martín Rossi (30 min) | Lun y Mié 14–19 · Vie 09–13 | Mónica Herrera, 1.er turno del próximo día de atención · Jorge Fernández, 2.º turno del último día de atención pasado · Hugo Benítez, 3.er turno del día de atención siguiente al próximo |
-   | Dra. Carolina Paz (20 min) | Mar y Jue 10–18 · Sáb 09–12 | Florencia Ríos 1.er turno y Tomás Díaz 3.er turno, ambos el próximo día de atención |
+   | Dra. Laura Méndez (20 min) | Lun, Mié, Vie 09:00–13:00 en Palermo (consultorio 1) · Mar y Jue en Belgrano (consultorio 2) | Sofía Gómez 09:20, próximo día de atención (incluye hoy) · Valentina López 10:00, el día de atención siguiente · Ricardo Martínez 10:20, último día de atención antes de hoy · Daniel Acosta 09:00, el anterior a ese |
+   | Dr. Martín Rossi (30 min) | Lun y Mié 14–19 en Palermo · Vie 09–13 en Belgrano | Mónica Herrera, 1.er turno del próximo día de atención · Jorge Fernández, 2.º turno del último día de atención pasado · Hugo Benítez, 3.er turno del día de atención siguiente al próximo |
+   | Dra. Carolina Paz (20 min) | Mar y Jue 10–18 en Belgrano · Sáb 09–12 en Palermo | Florencia Ríos 1.er turno y Tomás Díaz 3.er turno, ambos el próximo día de atención |
 
-5. Formato de cada caso: **Pasos** → **Resultado esperado**. Marcar ✅ / ❌ y anotar observaciones al final.
+6. Formato de cada caso: **Pasos** → **Resultado esperado**. Marcar ✅ / ❌ y anotar observaciones al final.
 
 ---
 
@@ -69,6 +70,9 @@
   | Secretaría | Pipeline, Inbox WhatsApp, Simulador LUCIA |
   | Médico | Agenda, Pacientes |
   | Marketing | Marketing |
+  | Plataforma | Clínicas |
+
+  Todos los roles tienen además **Cambiar contraseña** y **Cerrar sesión** al pie del menú.
 
 **PERM-02 · Acceso directo por URL a secciones no permitidas**
 - Pasos: con cada rol, escribir en la barra `/pipeline`, `/inbox`, `/simulador`, `/agenda`, `/pacientes`, `/marketing`, `/admin` y `/admin/medicos/nuevo`.
@@ -245,7 +249,7 @@ Usuario: `laura.mendez@lucia.local`, salvo indicación.
 - Pasos: ingresar.
 - Esperado:
   - Título "Agenda · Dra. Laura Méndez".
-  - Subtítulo con la fecha de hoy en letras, la franja horaria ("09:00–13:00", o "sin atención este día" en fin de semana) y "Consultorio 1".
+  - Subtítulo con la fecha de hoy en letras y la franja con su sede y consultorio (ej. "Palermo 09:00–13:00 (consultorio 1)"), o "sin atención este día" en fin de semana.
   - No hay selector de médico.
 
 **MED-AGE-02 · Navegación por días**
@@ -276,7 +280,7 @@ Usuario: `laura.mendez@lucia.local`, salvo indicación.
 
 **MED-AGE-08 · Agenda de otro médico (Rossi)**
 - Pasos: ingresar como `martin.rossi@lucia.local` e ir a su próximo día de atención (lunes o miércoles por la tarde, o viernes por la mañana).
-- Esperado: Mónica Herrera en el primer turno (14:00 lunes/miércoles o 09:00 viernes), "Moscas volantes y destellos — control de retina", "Consultorio 2", turnos de 30 min.
+- Esperado: Mónica Herrera en el primer turno (14:00 lunes/miércoles o 09:00 viernes), "Moscas volantes y destellos — control de retina", sede y "consultorio 2", turnos de 30 min.
 
 **MED-AGE-09 · Parámetro `medico` ignorado para médicos**
 - Pasos: como Méndez, abrir `/agenda?medico=<id de Rossi>` (el id se copia de la URL de Admin → Configuración → Dr. Rossi).
@@ -390,37 +394,37 @@ Usuario: `admin@lucia.local`.
 
 **ADM-04 · Tabla de médicos**
 - Pasos: abrir **Configuración**.
-- Esperado: 3 médicos con matrícula, especialidad, consultorio, duración, días (ej. Rossi "Lun, Mié, Vie") y arancel: Méndez $ 45.000, Rossi $ 60.000, Paz $ 50.000.
+- Esperado: 3 médicos con matrícula, especialidad, duración, sedes y días (ej. Rossi "Palermo: Lun, Mié · Belgrano: Vie") y arancel: Méndez $ 45.000, Rossi $ 60.000, Paz $ 50.000.
 
 **ADM-05 · Editar arancel y duración**
 - Pasos: entrar a Dr. Martín Rossi, cambiar el arancel a 65000 y la duración a 40, y tocar **Guardar cambios**. Volver a Configuración.
 - Esperado: aparece "Médico actualizado." y la tabla muestra $ 65.000 y 40 min.
 
 **ADM-06 · Editar horarios**
-- Pasos: en Rossi, desmarcar Viernes, marcar Martes 08:00–12:00 y guardar. Ir a **Agenda**, elegir Rossi y navegar a un martes.
+- Pasos: en Rossi, en el bloque **Belgrano** desmarcar Viernes y marcar Martes 08:00–12:00, y guardar. Ir a **Agenda**, elegir Rossi y navegar a un martes.
 - Esperado:
-  - La columna Días dice "Lun, Mar, Mié".
-  - La agenda del martes muestra "08:00–12:00".
+  - La columna dice "Palermo: Lun, Mié · Belgrano: Mar".
+  - La agenda del martes muestra "Belgrano 08:00–12:00".
   - La agenda del viernes dice "sin atención este día".
 
 **ADM-07 · Horario inválido**
 - Pasos: en un día activo poner Desde 13:00 y Hasta 09:00, y guardar.
-- Esperado: "Horario <Día>: La hora de inicio debe ser anterior al fin" y no se guarda ningún cambio.
+- Esperado: "Horario <Sede>, <Día>: La hora de inicio debe ser anterior al fin" y no se guarda ningún cambio.
 
 **ADM-08 · Cambiar el nombre del médico**
 - Pasos: cambiar el nombre de la Dra. Paz a "Dra. Carolina Paz Ruiz" y guardar.
 - Esperado: el nuevo nombre aparece en la tabla de médicos, en el filtro del Pipeline, en los turnos de las fichas y al loguearse ella (arriba a la izquierda).
 
 **ADM-09 · Alta de médico**
-- Pasos: **Nuevo médico** → nombre "Dr. Pablo Sosa", matrícula "MN 456789", especialidad "Glaucoma", consultorio 4, 30 min, arancel 55000, email `pablo.sosa@lucia.local`, contraseña `glaucoma123`, Jueves 09:00–13:00 → **Crear médico**.
+- Pasos: **Nuevo médico** → nombre "Dr. Pablo Sosa", matrícula "MN 456789", especialidad "Glaucoma", 30 min, arancel 55000, email `pablo.sosa@lucia.local`, contraseña `glaucoma123`, en el bloque **Palermo** consultorio 4 y Jueves 09:00–13:00 → **Crear médico**.
 - Esperado:
-  - Vuelve a Configuración con el Dr. Sosa en la tabla (Días "Jue").
+  - Vuelve a Configuración con el Dr. Sosa en la tabla ("Palermo: Jue").
   - Aparece en el filtro de médicos del Pipeline.
-  - Ingresando con su email y contraseña cae en su agenda, vacía, y "Mis pacientes" muestra 0.
+  - Al ingresar con su email y contraseña se le pide cambiarla; después cae en su agenda, vacía, y "Mis pacientes" muestra 0.
 
 **ADM-10 · Alta con email repetido**
 - Pasos: repetir ADM-09 con `laura.mendez@lucia.local`.
-- Esperado: "Ya existe un usuario con ese email." y no se crea nada.
+- Esperado: "Ya existe un usuario con ese email en esta clínica." y no se crea nada.
 
 **ADM-11 · Alta con datos faltantes o contraseña corta**
 - Pasos: dejar la matrícula vacía; en otro intento, usar la contraseña `123`.
@@ -625,6 +629,84 @@ Requiere `WHATSAPP_VERIFY_TOKEN` y `WHATSAPP_APP_SECRET` en `.env` y que la clí
 **VIS-05 · Mensajes**
 - Pasos: abrir una conversación con mensajes de paciente, LUCIA, recepción y sistema.
 - Esperado: paciente a la izquierda en gris con borde; LUCIA a la derecha en azul tenue con su avatar; recepción a la derecha en azul con texto blanco (la hora también legible); sistema con borde punteado.
+
+---
+
+## 13. Multi-clínica y sedes (Hito 4)
+
+Datos del seed: **Centro Oftalmológico Demo** (`centro-demo`, sedes Palermo y Belgrano) y **Visión Sur** (`vision-sur`, sede Lomas de Zamora). Usuarios de Visión Sur: `admin@visionsur.local`, `secretaria@visionsur.local`. El Dr. Rossi (`martin.rossi@lucia.local`) tiene una cuenta en cada clínica, con la misma contraseña. Plataforma: `plataforma@lucia.local`. Estos casos también están automatizados en `qa/e2e/hito4.mjs`.
+
+**MC-01 · Panel de plataforma**
+- Pasos: ingresar como `plataforma@lucia.local`.
+- Esperado:
+  - Cae en **Clínicas** (`/plataforma`); el menú sólo tiene esa sección.
+  - Ve las dos clínicas con estado, cantidad de sedes, usuarios, pacientes y conversaciones del mes. No ve ningún nombre de paciente.
+  - Escribir `/pipeline`, `/pacientes` o `/inbox` en la barra lo devuelve a `/plataforma`.
+
+**MC-02 · Alta de clínica**
+- Pasos: en **Nueva clínica**, cargar nombre "Visión Norte", CUIT `30-71111222-3`, link `vision-norte`, teléfono, sede "Sede central" con dirección y administrador `admin@visionnorte.local`. Tocar **Crear clínica**.
+- Esperado: aparece la contraseña inicial (12 caracteres) con el aviso de que no se vuelve a mostrar, y la clínica en la tabla como Activa.
+
+**MC-03 · Validaciones del alta**
+- Pasos: repetir MC-02 cambiando sólo el CUIT (`30-72222333-4`), con el link `vision-norte` ya usado; luego con un link nuevo y el CUIT `30-71234567-1` de la clínica demo; luego con el link `Vision Norte!`.
+- Esperado: "Ese link ya lo usa otra clínica", "Ya existe una clínica con ese CUIT" y el error de formato del link, respectivamente. No se crea nada.
+
+**MC-04 · Primer ingreso con contraseña inicial**
+- Pasos: abrir `/c/vision-norte/equipo` e ingresar con `admin@visionnorte.local` y la contraseña de MC-02. Intentar ir a `/pipeline`. Cambiar la contraseña.
+- Esperado:
+  - La pantalla de ingreso muestra "Visión Norte".
+  - Tras ingresar, va a **Cambiar contraseña** con el aviso de primer ingreso; `/pipeline` vuelve a esa pantalla.
+  - Con la contraseña nueva cambiada entra al Pipeline vacío; en Configuración hay una sede, "Sede central".
+
+**MC-05 · Médico con cuentas en dos clínicas**
+- Pasos: en `/login`, ingresar como `martin.rossi@lucia.local`.
+- Esperado: pantalla **Elegí la clínica** con "Centro Oftalmológico Demo" y "Visión Sur". Al elegir Visión Sur, la agenda y "Mis pacientes" muestran sólo datos de esa clínica (Sofía Gómez), y el menú lateral dice "Visión Sur".
+
+**MC-06 · Link de ingreso de una clínica**
+- Pasos: abrir `/c/centro-demo/equipo` e ingresar como `martin.rossi@lucia.local`.
+- Esperado: entra directo a Centro Oftalmológico Demo, sin elegir clínica (Mis pacientes: Fernández, Herrera, Benítez).
+
+**MC-07 · Aislamiento por URL**
+- Pasos: como `admin@lucia.local`, copiar la URL de la ficha de Jorge Fernández, de una conversación del Inbox, de un médico y de una sede. Ingresar como `admin@visionsur.local` y pegar cada una.
+- Esperado: todas responden "no encontrado". El Pipeline de Visión Sur muestra sólo sus 3 pacientes.
+
+**MC-08 · Suspender una clínica**
+- Pasos: con una sesión abierta de `admin@visionsur.local` en otra ventana, suspender Visión Sur desde la plataforma. Recargar la ventana de Visión Sur. Intentar ingresar de nuevo. Abrir `/c/vision-sur/equipo`. Después, reactivarla.
+- Esperado:
+  - La sesión abierta vuelve al login; el ingreso falla con "Email o contraseña incorrectos.".
+  - El link de la clínica avisa que el acceso está suspendido.
+  - Un mensaje de WhatsApp al número de Visión Sur (WA-03 con `phone_number_id` `100000000000002`) queda registrado sin respuesta de LUCIA.
+  - Al reactivarla, todo vuelve a funcionar.
+
+**MC-09 · Usuarios de la clínica**
+- Pasos: como `admin@lucia.local`, **Configuración → Administrar usuarios**. Crear "Secretaria Dos" (`secretaria2@lucia.local`, Secretaría). Ingresar con ese usuario y la contraseña mostrada.
+- Esperado:
+  - Se muestra la contraseña inicial una sola vez; el usuario aparece con estado "Contraseña inicial".
+  - El nuevo usuario debe cambiar la contraseña antes de usar el CRM.
+  - "Cambiar rol", "Restablecer contraseña" y "Desactivar" funcionan sobre otros usuarios; en la fila propia dice "Tu usuario".
+  - Un email ya usado en la clínica da "Ya existe un usuario con ese email en esta clínica"; el mismo email sí puede existir en otra clínica.
+
+**MC-10 · Sedes**
+- Pasos: **Configuración → Nueva sede** "Caballito", dirección "Av. Rivadavia 5000, CABA". Luego intentar desactivar **Palermo**, y después desactivar **Caballito**.
+- Esperado:
+  - Caballito aparece en la tabla de sedes como Activa.
+  - Palermo no se desactiva: "La sede tiene N turno(s) futuro(s)…".
+  - Caballito se desactiva y deja de aparecer en el formulario de horarios y en los filtros.
+
+**MC-11 · Horarios por sede**
+- Pasos: abrir la Dra. Méndez en Configuración.
+- Esperado: un bloque de horario por sede activa, cada uno con su consultorio (Palermo: Lun, Mié y Vie; Belgrano: Mar y Jue). Marcar el martes también en Palermo y guardar da "Martes: el horario de Palermo se superpone con el de Belgrano."
+
+**MC-12 · Agenda, Pipeline y Marketing por sede**
+- Pasos: como admin, abrir la Agenda de la Dra. Méndez en el día del turno de Valentina López; filtrar por Palermo. En Pipeline filtrar por Belgrano. En Marketing ("Todo") filtrar por Palermo.
+- Esperado:
+  - La Agenda muestra la columna Sede ("Belgrano", consultorio 2) y, con el filtro Palermo, "No hay turnos para este día".
+  - El Pipeline por Belgrano incluye a Valentina López y no a Sofía Gómez.
+  - Marketing por sede aclara que sólo cuenta pacientes con turnos en esa sede.
+
+**MC-13 · LUCIA con sedes**
+- Pasos: en el Simulador, "Hola, quiero sacar un turno", "1" y "¿Dónde quedan?".
+- Esperado: cada opción dice la sede ("… en Palermo"), la confirmación incluye sede y dirección, y la ubicación lista Belgrano y Palermo. En Visión Sur (`CHAT_CLINIC=vision-sur npm run chat -- "quiero un turno"`) sólo se ofrecen turnos de Lomas de Zamora.
 
 ---
 

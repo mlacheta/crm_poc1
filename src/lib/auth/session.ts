@@ -8,9 +8,13 @@ const SESSION_TTL_SECONDS = 60 * 60 * 12; // una jornada laboral
 
 export type SessionPayload = {
   userId: string;
-  clinicId: string;
+  clinicId: string | null; // null sólo para PLATFORM_ADMIN
   role: Role;
 };
+
+/** Token de corta duración del paso "elegí la clínica" (PRD §4.7): las cuentas cuya contraseña ya coincidió. */
+export const CLINIC_CHOICE_COOKIE = "lucia_clinic_choice";
+const CHOICE_TTL_SECONDS = 5 * 60;
 
 function secretKey() {
   const secret = process.env.SESSION_SECRET;
@@ -21,7 +25,7 @@ function secretKey() {
 }
 
 export async function signSession(payload: SessionPayload): Promise<string> {
-  return new SignJWT(payload)
+  return new SignJWT({ ...payload, typ: "session" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_TTL_SECONDS}s`)
@@ -31,8 +35,9 @@ export async function signSession(payload: SessionPayload): Promise<string> {
 export async function verifySession(token: string | undefined): Promise<SessionPayload | null> {
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify<SessionPayload>(token, secretKey(), { algorithms: ["HS256"] });
-    return { userId: payload.userId, clinicId: payload.clinicId, role: payload.role };
+    const { payload } = await jwtVerify<SessionPayload & { typ?: string }>(token, secretKey(), { algorithms: ["HS256"] });
+    if (payload.typ !== "session") return null;
+    return { userId: payload.userId, clinicId: payload.clinicId ?? null, role: payload.role };
   } catch {
     return null;
   }
@@ -45,3 +50,23 @@ export const sessionCookieOptions = {
   path: "/",
   maxAge: SESSION_TTL_SECONDS,
 };
+
+export async function signClinicChoice(userIds: string[]): Promise<string> {
+  return new SignJWT({ typ: "clinic-choice", userIds })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${CHOICE_TTL_SECONDS}s`)
+    .sign(secretKey());
+}
+
+export async function verifyClinicChoice(token: string | undefined): Promise<string[] | null> {
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify<{ typ?: string; userIds?: string[] }>(token, secretKey(), { algorithms: ["HS256"] });
+    return payload.typ === "clinic-choice" && Array.isArray(payload.userIds) ? payload.userIds : null;
+  } catch {
+    return null;
+  }
+}
+
+export const clinicChoiceCookieOptions = { ...sessionCookieOptions, maxAge: CHOICE_TTL_SECONDS };

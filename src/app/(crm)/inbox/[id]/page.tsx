@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ChatMessage } from "@/components/chat-message";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
 import { isLuciaPaused } from "@/lib/conversations";
 import { formatTime, patientName } from "@/lib/format";
 import { STAGE_LABELS } from "@/lib/pipeline";
@@ -11,7 +11,7 @@ import { pauseLucia, resumeLucia } from "../actions";
 import { MessageComposer } from "./message-composer";
 
 export default async function ConversationPage({ params }: PageProps<"/inbox/[id]">) {
-  const user = await requireUser(["ADMIN", "SECRETARIA"]);
+  const user = await requireClinicUser(["ADMIN", "SECRETARIA"]);
   const { id } = await params;
 
   const conv = await prisma.conversation.findFirst({

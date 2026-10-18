@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireUser } from "@/lib/auth/dal";
+import { requireClinicUser } from "@/lib/auth/dal";
+import { activeLocations } from "@/lib/locations";
 import { createDoctor } from "../../actions";
 import { DoctorForm } from "../../doctor-form";
 
 export default async function NewDoctorPage() {
-  await requireUser(["ADMIN"]);
+  const user = await requireClinicUser(["ADMIN"]);
+  const locations = await activeLocations(user.clinicId);
 
   return (
     <div className="space-y-4">
@@ -19,12 +21,12 @@ export default async function NewDoctorPage() {
         <CardContent>
           <DoctorForm
             action={createDoctor}
+            locations={locations}
             isNew
             values={{
               fullName: "",
               licenseNumber: "",
               specialty: "Oftalmología General",
-              consultorioNumber: "",
               appointmentDuration: 20,
               consultationFee: 45000,
               schedule: {},

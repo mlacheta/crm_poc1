@@ -48,7 +48,7 @@ Arquitectura según la spec 06: la app en **Vercel** (región São Paulo, `gru1`
 ## 5. Antes de cada demo
 
 - Los turnos del seed son relativos a la fecha en que se cargan. Para que la agenda muestre turnos "de esta semana", recargar los datos el día anterior: `npm run demo:db -- --seed`.
-- Usuarios: `admin@`, `secretaria@`, `marketing@`, `laura.mendez@`, `martin.rossi@`, `carolina.paz@` (todos `@lucia.local`).
+- Usuarios: `admin@`, `secretaria@`, `marketing@`, `laura.mendez@`, `martin.rossi@`, `carolina.paz@` (todos `@lucia.local`), la plataforma `plataforma@lucia.local` y la segunda clínica `admin@visionsur.local`. El Dr. Rossi tiene cuenta en las dos clínicas: al ingresar elige a cuál entrar.
 - En el Inbox, responder una conversación de WhatsApp muestra "NO enviado por WhatsApp: Falta WHATSAPP_ACCESS_TOKEN": es lo esperado sin un número de Meta conectado. Para mostrar el circuito completo conviene usar el **Simulador**.
 
 ## Actualizaciones

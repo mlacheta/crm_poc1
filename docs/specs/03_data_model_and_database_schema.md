@@ -426,9 +426,9 @@ Resolución de la regla (en este orden): plan exacto de la obra social → fila 
 
 ---
 
-### 4. Multi-clínica (SaaS) y Sedes (pendiente de implementar — Hito 4)
+### 4. Multi-clínica (SaaS) y Sedes (implementado — Hito 4)
 
-Implementa el PRD §4.7. Todas las entidades de negocio ya cuelgan de `Clinic` (`clinicId`); estos son los cambios.
+Implementa el PRD §4.7. Todas las entidades de negocio ya cuelgan de `Clinic` (`clinicId`); estos son los cambios. Implementado en la migración `20261017120000_multi_clinica_sedes`, que migra los datos existentes a una sede inicial por clínica y genera el `slug` desde el nombre.
 
 ```prisma
 enum Role {

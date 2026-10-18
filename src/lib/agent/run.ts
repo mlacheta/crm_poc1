@@ -1,6 +1,7 @@
 // Ejecuta un turno de LUCIA sobre una conversación: arma el historial, llama al modelo con las
 // herramientas (loop multi-paso del AI SDK) y devuelve la respuesta + traza de herramientas.
 import { generateText, isStepCount, type ModelMessage } from "ai";
+import { activeLocations } from "@/lib/locations";
 import { prisma } from "@/lib/prisma";
 import type { Message } from "@/generated/prisma/client";
 import { llmConfig, getLanguageModel } from "./model";
@@ -55,14 +56,14 @@ export async function runLucia(conversationId: string, now = new Date()): Promis
   const { patient } = conversation;
   const doctors = await prisma.doctorProfile.findMany({
     where: { clinicId: patient.clinicId, user: { isActive: true } },
-    include: { user: { select: { fullName: true } }, availabilities: true },
+    include: { user: { select: { fullName: true } }, availabilities: { include: { location: { select: { name: true, isActive: true } } } } },
     orderBy: { user: { fullName: "asc" } },
   });
 
   try {
     const result = await generateText({
       model: getLanguageModel(),
-      instructions: buildSystemPrompt({ clinic: patient.clinic, doctors, patient, now }),
+      instructions: buildSystemPrompt({ clinic: patient.clinic, locations: await activeLocations(patient.clinicId), doctors, patient, now }),
       messages: toModelMessages([...conversation.messages].reverse()),
       tools: createLuciaTools({ clinicId: patient.clinicId, patientId: patient.id, conversationId, now }),
       stopWhen: isStepCount(MAX_STEPS),
