@@ -31,15 +31,17 @@ Todos los roles, salvo Plataforma, pertenecen a una única clínica y sólo ven 
    - Métricas operativas agregadas por clínica; sin acceso a datos de pacientes ni clínicos.
 
 1. **Secretaria / Recepción**:
-   - Visualización de la agenda diaria/semanal por médico y consultorio.
+   - Visualización de la agenda por día, semana, mes y año, por médico y sede, sin motivo de consulta (ver 4.8).
+   - Alta y edición manual de pacientes (ver 4.8).
    - Pipeline CRM (Kanban) de pacientes: contactados, agendados, pendientes de pago, confirmados, en sala de espera, atendidos.
    - Inbox unificado de WhatsApp con opción de "Intervención Humana" (pausar temporalmente a LUCIA).
    - Generación manual de turnos o reprogramaciones.
    
 2. **Médico Oftalmólogo**:
-   - Vista simplificada de su agenda personal de turnos del día.
+   - Su agenda por día, semana, mes y año, y la edición de sus franjas horarias por sede (ver 4.8).
+   - Conexión opcional de su Google Calendar para recibir sus turnos (ver 4.12).
    - Historial y ficha rápida del paciente (motivo de consulta informado a LUCIA).
-   - *Fase 2*: Carga de evolución médica/expediente oftalmológico (agudeza visual, presión intraocular, etc.) y emisión de recetas.
+   - *Fase 2 (postergado)*: Carga de evolución médica/expediente oftalmológico (agudeza visual, presión intraocular, etc.) y emisión de recetas.
 
 3. **Marketing / Growth**:
    - Métricas de adquisición de campañas (atribución por enlace o número/anuncio de origen).
@@ -48,6 +50,7 @@ Todos los roles, salvo Plataforma, pertenecen a una única clínica y sólo ven 
 
 4. **Administrador / Dueño de Clínica**:
    - Alta, edición y desactivación de los usuarios de su clínica (todos los roles).
+   - Personalización y publicación de la página web de la clínica (ver 4.9).
    - Configuración de sedes, médicos, agendas por sede, consultorios, tarifas y la tabla de coberturas por obra social y plan (ver 4.4.1 y 4.7).
    - Integración fiscal ARCA (Certificado digital, Punto de Venta, tipo de factura B/C).
    - Facturación consolidada y reportes financieros (Mercado Pago reconciliado).
@@ -61,6 +64,7 @@ Todos los roles, salvo Plataforma, pertenecen a una única clínica y sólo ven 
   - Detección de intención del paciente: Solicitar turno, consultar precio, pedir información de estudios (ej. fondo de ojo, refracción, campo visual, topografía), ubicación, obras sociales aceptadas.
   - LUCIA no da consejos de tratamiento ni de alivio (gotas, lágrimas artificiales, compresas, remedios caseros): ante síntomas sólo ofrece una consulta, o aplica el triage si hay signos de urgencia.
   - Triage inteligente: Detecta urgencias oftalmológicas (pérdida súbita de visión, dolor agudo, trauma ocular, destellos/cuerpos extraños) y deriva con alerta prioritaria a guardia/recepción humana.
+- **Identificación previa:** para reservar, quien se atiende debe estar registrado y validado con nombre, apellido, DNI y sexo; se puede sacar turno para otra persona (ver 4.10).
 - **Flujo de Agendamiento Inteligente**:
   - Consulta disponibilidad de slots en tiempo real.
   - Bloqueo transitorio (slot lock de 15 minutos) mientras el paciente abona la seña o consulta.
@@ -130,7 +134,7 @@ Reglas:
 - Obtención del CAE (Código de Autorización Electrónico) y generación de comprobante con código QR reglamentario.
 - Envío automático del comprobante en PDF por WhatsApp o enlace de descarga.
 
-#### 4.6. Módulos Opcionales / Fase 2
+#### 4.6. Módulos Opcionales / Fase 2 (postergados)
 - **Historia Clínica Oftalmológica Simplificada**: Ficha de antecedentes, agudeza visual (AV), refracción, presión ocular (PIO), biomicroscopía y fondo de ojo.
 - **Recetas Médicas Digitales**: Generación de receta con firma digital/médica conforme a normativa vigente en Argentina.
 - **Solicitud de Reseñas para Google Business**: 2 a 4 horas después de completada la consulta médica, si el estado es `Atendido`, LUCIA envía un mensaje invitando a dejar una calificación en Google Maps con link directo.
@@ -154,7 +158,7 @@ LUCIA se vende a varias clínicas. Cada clínica es un espacio aislado: sus usua
   - Si coinciden con una sola cuenta, entra directo a su clínica.
   - Si coinciden con cuentas de más de una clínica, elige a cuál entrar; sólo se listan las clínicas cuya contraseña coincidió.
   - Para cambiar de clínica, cierra sesión y vuelve a ingresar.
-- Cada clínica tiene su link propio (`/c/<slug>`): muestra su nombre en la pantalla de ingreso y entra directo a esa clínica.
+- Cada clínica tiene un link de ingreso para su equipo (`/c/<slug>/equipo`): muestra su nombre y entra directo a esa clínica. La dirección `/c/<slug>` es la página pública para pacientes (ver 4.9).
 - Los mensajes de error no revelan si un email existe ni en qué clínicas.
 
 **Sedes**
@@ -165,6 +169,74 @@ LUCIA se vende a varias clínicas. Cada clínica es un espacio aislado: sus usua
 - LUCIA pregunta en qué sede prefiere atenderse el paciente cuando la clínica tiene más de una, ofrece turnos de esa sede (o de todas, si le da igual) e informa la dirección de la sede del turno.
 - El número de WhatsApp es de la clínica y atiende a todas sus sedes.
 - Pendiente de definir: si cada sede factura con su propio punto de venta de ARCA.
+
+
+#### 4.8. Agenda y Pacientes en el CRM
+- **Horarios de atención por día:** cada médico define, por sede y por día de la semana, **una o más franjas** (ej. lunes 9:00–13:00 y 15:00–19:00 en Palermo). Las franjas de un mismo día no se superponen. Las edita el Administrador y también el propio médico sobre su agenda.
+- **Vistas de la agenda:** se elige entre **Día** (lista de turnos con detalle), **Semana** (grilla de horas × días), **Mes** (calendario con la cantidad de turnos de cada día) y **Año** (los 12 meses con la carga de cada día). Desde Mes y Año, un clic en un día abre la vista Día. Filtros por médico y por sede.
+- **Agenda para Secretaría:** ve la agenda de todos los médicos de su clínica, sin el motivo de consulta (dato clínico, spec 02 §4.2).
+- **Alta manual de pacientes:** Secretaría y Administración dan de alta y editan pacientes desde el CRM (sección Pacientes), con los mismos datos que el registro web (4.9), incluido el sexo. Sirve para quien llama por teléfono o se presenta en la clínica.
+- **Turnos manuales:** Secretaría crea, reprograma y cancela turnos desde la agenda, con el mismo servicio de turnos que usan LUCIA y la web (4.9).
+
+#### 4.9. Portal Web de la Clínica (Landing de Pacientes)
+Cada clínica tiene una página pública propia en `/c/<slug>`, con su logo y su nombre, donde los pacientes se registran y sacan turno sin pasar por WhatsApp.
+
+**Contenido y personalización** (lo configura el Administrador en Configuración → Página web):
+- Logo, nombre, texto de bienvenida, sedes con dirección y mapa, teléfono, médicos con su especialidad y obras sociales con las que trabaja.
+- Puede mostrar u ocultar los precios de la consulta particular.
+- La página respeta la identidad visual de LUCIA (Hito 3.5) con el logo y el nombre de la clínica; publicar o despublicar la página es una opción del Administrador.
+
+**Registro y edición de datos del paciente**
+- Botón o pestaña **"Registrar un paciente"**: formulario con nombre, apellido, DNI, sexo, fecha de nacimiento, celular y email del paciente (opcionales si es menor o no tiene), obra social, plan y número de afiliado (o "Particular"). Se puede registrar a uno mismo o a otra persona (ej. un hijo).
+- **Ingreso del contacto:** quien usa la web se identifica con su email y un **código de verificación** que recibe por email. Con eso ve los turnos que sacó y los pacientes que registró. El código se envía **sólo por email**, por seguridad: no por WhatsApp ni SMS, porque el celular puede cambiar de dueño.
+- Un DNI no puede registrarse dos veces en la misma clínica. Si ya existe, el formulario indica comunicarse con recepción, sin mostrar los datos registrados.
+- Al completar el registro, quien lo completó recibe un **email de bienvenida** que le confirma que ya puede sacar turno.
+
+**Reserva de turnos en la web**
+- Sólo se reserva para pacientes registrados, validados con nombre, apellido, DNI y sexo (4.10), para uno mismo o para otra persona.
+- Mismo flujo que por WhatsApp: motivo de consulta, sede, preferencia de **mañana o tarde**, turnos disponibles en ese rango, elección y reserva; luego el cobro según la cobertura (PRD §4.4.1, Hito 4).
+- Un único **servicio de turnos** en el backend atiende a la web, a LUCIA (WhatsApp) y al CRM: mismas reglas de disponibilidad, reserva sin doble-booking, cobertura y cobro (spec 02).
+- El contacto ve los turnos que sacó y puede cancelarlos o reprogramarlos según la política de la clínica.
+
+#### 4.10. Identificación del Paciente (WhatsApp y Web)
+Se distinguen dos figuras:
+- **Contacto:** quien se comunica, por WhatsApp (identificado por su celular) o por la web (identificado por su email verificado).
+- **Paciente:** quien se atiende. Su identidad es **nombre, apellido, DNI y sexo** (F, M o X, como figura en el DNI).
+
+**Reglas de identidad**
+- El celular **no identifica a un paciente**: un número puede cambiar de dueño. Sirve para encontrar al contacto y sus pacientes asociados, pero toda reserva exige validar al paciente con sus cuatro datos.
+- Un contacto puede sacar turno **para sí mismo o para otra persona** (ej. un padre para sus hijos), siempre informando nombre, apellido, DNI y sexo de quien se atiende.
+- Validación: los cuatro datos deben coincidir con un paciente registrado de la clínica. Se comparan sin distinguir mayúsculas, tildes ni espacios; el DNI sin puntos.
+- LUCIA identifica la **intención** de cada mensaje con IA (sacar, reprogramar o cancelar un turno; consultar información; urgencia; hablar con una persona). El modo *mock* sólo se usa para pruebas internas.
+
+**Flujo para sacar turno**
+1. Las **consultas de información** (precios, obras sociales, ubicación, estudios) no requieren identificación. Las **urgencias** se atienden antes que cualquier validación (regla 1 de la spec 04).
+2. LUCIA pregunta **para quién es el turno** y pide nombre, apellido, DNI y sexo de esa persona.
+3. **Los datos coinciden con un paciente registrado:** queda validado para esta conversación y se asocia al contacto. Si el mismo contacto pide otro turno para ese paciente en la misma conversación, no se vuelve a pedir.
+4. **Los datos no coinciden con ningún paciente:** LUCIA responde siempre igual, sin revelar si el DNI existe: *"No encontramos un paciente con esos datos. Si es la primera vez, registralo en este link"* y envía el **link de registro** (formulario de 4.9). Si al registrarse el DNI ya existe con otros datos, el formulario lo rechaza e indica comunicarse con recepción.
+5. Al completarse el registro, quien lo completó recibe el **email de bienvenida** y, dentro de la ventana de 24 h, LUCIA retoma la conversación para continuar con la reserva.
+6. Validado el paciente, LUCIA pregunta si prefiere **mañana o tarde** y ofrece turnos en ese rango. Mañana = turnos que empiezan antes de las 13:00; tarde = desde las 13:00. Cada clínica puede cambiar el corte.
+
+**Protección de datos**
+- LUCIA nunca enumera los pacientes ni los turnos asociados a un celular: el nuevo dueño de un número no ve nada sin los cuatro datos del paciente.
+- Nunca se le muestran al contacto los datos guardados para que los confirme.
+- Hasta 3 intentos de validación fallidos por conversación y por día; después deriva a recepción.
+
+**Edición de datos**
+- Un contacto puede editar los datos de los pacientes que él mismo registró, salvo nombre, apellido, DNI y sexo. Para corregir esos datos, o para cambiar datos de un paciente que no registró, se pide a recepción.
+
+#### 4.11. Notificaciones al Paciente
+- **Al reservar un turno** (por WhatsApp, web o CRM), el **contacto que lo sacó** recibe la confirmación **por email y por WhatsApp** con fecha, hora, paciente, médico, sede, dirección e indicaciones previas. Si el paciente tiene email propio y distinto, también lo recibe.
+  - Si el turno queda pendiente de pago, el aviso incluye el link de pago y el plazo; la confirmación definitiva sale al acreditarse (Hito 4).
+- El email incluye un botón **"Agregar a Google Calendar"** y un archivo `.ics` adjunto, que funciona también con Apple Calendar y Outlook.
+- Cancelaciones y reprogramaciones también se notifican por email y WhatsApp.
+- Mensajes de WhatsApp fuera de la ventana de 24 h requieren plantillas aprobadas por Meta (spec 04 §2).
+
+#### 4.12. Sincronización con Google Calendar de los Médicos
+- Cada médico puede **conectar su Google Calendar** desde LUCIA (autorización con su cuenta de Google) y elegir en qué calendario se cargan sus turnos.
+- LUCIA crea, actualiza y elimina el evento cuando el turno se confirma, se reprograma o se cancela. La sincronización es en un solo sentido: LUCIA → Google.
+- **Contenido del evento:** nombre del paciente, sede y consultorio. Nunca el motivo de consulta ni datos clínicos.
+- *Posterior:* leer los eventos ocupados del calendario del médico para bloquear esos horarios en LUCIA (sincronización en dos sentidos).
 
 ---
 

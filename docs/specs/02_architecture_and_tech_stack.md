@@ -143,3 +143,14 @@ stateDiagram-v2
    - El webhook de WhatsApp asigna cada mensaje a la clínica dueña del Phone Number ID; si la clínica está suspendida, el mensaje se registra pero LUCIA no responde.
    - `PLATFORM_ADMIN` sólo opera sobre clínicas, sus sedes y sus administradores, y ve métricas agregadas: no accede a pacientes, conversaciones ni historias clínicas.
    - Las pruebas de aceptación incluyen intentos de acceso cruzado entre dos clínicas, por URL y por server action.
+
+5. **Portal Público de Pacientes (PRD §4.9)**:
+   - Las páginas `/c/<slug>` son públicas: no muestran pacientes, turnos ajenos ni datos clínicos; sólo información de la clínica y los horarios libres.
+   - El contacto ingresa a la web con un código de un solo uso (10 minutos, 5 intentos) enviado **sólo a su email**, nunca por WhatsApp ni SMS; esa sesión es independiente de la del equipo y sólo da acceso a los turnos que sacó y a los pacientes que registró. Nombre, apellido, DNI y sexo sólo los modifica el equipo de la clínica.
+   - La identidad del paciente es nombre, apellido, DNI y sexo; el celular nunca alcanza para identificarlo, porque un número puede cambiar de dueño (PRD §4.10).
+   - Los links de registro enviados por WhatsApp son firmados, de un solo uso, vencen a las 48 horas y asocian al paciente registrado con el contacto que los pidió.
+   - Límite de pedidos por IP y por email en registro, envío de códigos y reservas, para evitar abuso y turnos falsos.
+   - La validación por WhatsApp responde igual si el DNI no existe o si existe con otros datos. El único aviso de DNI existente es al intentar registrarlo de nuevo, y remite a recepción sin mostrar datos.
+   - Límite de intentos de validación (3 por conversación y por día) para impedir probar DNIs.
+
+6. **Servicio Único de Turnos**: WhatsApp (LUCIA), el portal web y el CRM usan las mismas funciones de agenda, reserva, cobertura y cobro (spec 04 §6.3).

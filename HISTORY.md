@@ -3,10 +3,12 @@
 > Memoria entre sesiones. Mantener < 60 líneas: actualizar "Estado" (no agregar), 1 línea por hito en "Log",
 > y en "Decisiones" sólo lo que no se deduce del código ni de `docs/specs/`. Borrar lo obsoleto.
 
-## Estado (2026-10-04)
-- Hitos 1, 2, 3 y 3.5 hechos (roadmap: `docs/specs/05_*`). **Próximo: Hito 3.6** — multi-clínica (SaaS) + sedes, especificado en PRD §4.7 / spec 03 §4 (médicos con cuenta independiente por clínica; login elige clínica si el email+clave coinciden en varias). Después Hito 4 — Mercado Pago + tabla de coberturas (`generate_mercadopago_payment` hoy sólo crea el Payment PENDING).
+## Estado (2026-10-17)
+- Hitos 1, 2, 3 y 3.5 hechos. **Siguientes (especificados, en orden):** 3.6 multi-clínica + sedes → 3.7 agenda (franjas, vistas día/semana/mes/año) y alta manual de pacientes → 3.8 portal web por clínica (`/c/<slug>`, registro, reserva web, emails + Google Calendar del paciente) → 3.9 identificación por WhatsApp (nombre+DNI, link de registro, mañana/tarde) → 3.10 Google Calendar de médicos → 4 Mercado Pago + coberturas. Historia clínica: postergada (Hito 7). Specs: PRD §4.7–4.12, spec 02 §4.4–4.6, spec 03 §4–5, spec 04 §6.
 - Todo commiteado en `develop`. LUCIA probada con Gemini (free tier): tools OK en reserva, urgencia, guardrail, médico/día, derivación. Free tier = 5 req/min/modelo + 503 frecuentes → no apto producción. Usar `LLM_MODEL=gemini-3.7-flash` (3.8 y flash-latest comparten cuota).
 - Decidido: LUCIA no da consejos de alivio, sólo deriva a consulta (en prompt). Cobro según **tabla de coberturas por obra social y plan** (PRD §4.4.1, spec 03 §3, spec 04 `check_coverage`): especificada, se implementa en Hito 4. Pendiente: reintegro de seña y reglas para estudios/prácticas.
+- Decidido: identidad del paciente = nombre + apellido + DNI + sexo; el celular NO identifica (puede cambiar de dueño). Se separa **Contacto** (quien escribe, por celular/email) de **Paciente**; un contacto saca turnos para otros validando sus 4 datos (spec 03 §5, refactor en Hito 3.8).
+- Decidido: ingreso web con código SÓLO por email; el contacto edita sólo pacientes que registró (no nombre/DNI/sexo); evento de Google Calendar del médico sin motivo ni datos clínicos; corte mañana/tarde 13:00 configurable. Pendientes menores: reintegro de seña, coberturas de estudios, punto de venta ARCA por sede.
 - Deploy demo **publicado**: https://crm-poc1.vercel.app (Vercel gru1 + Neon sa-east-1, LUCIA mock; probado 2026-10-05). Guía `docs/deploy.md`; número real de WhatsApp: `docs/whatsapp-produccion.md`. `vercel.json` corre `prisma migrate deploy` en el build; `prisma.config.ts` usa `DATABASE_URL_UNPOOLED` para migraciones. Base remota: `npm run demo:db [-- --seed]` con `.env.demo`. Rama de producción: `main`.
 - QA manual por rol en `qa/manual_tests.md` (mantener al agregar funcionalidad).
 

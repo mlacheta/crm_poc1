@@ -14,6 +14,13 @@ erDiagram
     CLINIC ||--o{ INVOICE_CONFIG : configures
     CLINIC ||--o{ HEALTH_INSURANCE : accepts
     CLINIC ||--o{ LOCATION : operates
+    CLINIC ||--o| CLINIC_SITE : publishes
+    CLINIC ||--o{ CONTACT : talks_with
+    CONTACT ||--o{ CONVERSATION : holds
+    CONTACT ||--o{ CONTACT_PATIENT : books_for
+    PATIENT ||--o{ CONTACT_PATIENT : linked
+    CONTACT ||--o{ NOTIFICATION : receives
+    DOCTOR_PROFILE ||--o| DOCTOR_CALENDAR_CONNECTION : syncs
     LOCATION ||--o{ AVAILABILITY_SCHEDULE : hosts
     LOCATION ||--o{ APPOINTMENT : hosts
 
@@ -458,7 +465,7 @@ Cambios en modelos existentes:
 
 | Modelo | Cambio | Motivo |
 | :--- | :--- | :--- |
-| `Clinic` | `slug String @unique` | Link propio de la clínica (`/c/<slug>`) |
+| `Clinic` | `slug String @unique` | Página pública de la clínica (`/c/<slug>`) y link de ingreso del equipo (`/c/<slug>/equipo`) |
 | `Clinic` | `status ClinicStatus @default(ACTIVE)` | Suspender una clínica sin borrarla |
 | `Clinic` | `whatsappNumberId` pasa a `@unique` | El webhook asigna cada mensaje a una sola clínica |
 | `Clinic` | `locations Location[]` | Sus sedes (al menos una) |
@@ -473,3 +480,151 @@ Reglas:
 - `Patient` y `Conversation` siguen siendo de la clínica, no de la sede.
 - Un médico que atiende en dos clínicas = dos `User` + dos `DoctorProfile`, uno por clínica, sin vínculo entre sí.
 - Migración de datos: cada clínica existente recibe una sede inicial con su dirección actual; sus horarios y turnos pasan a esa sede, y el `consultorioNumber` del médico se copia a cada uno de sus horarios.
+
+---
+
+### 5. Contactos, Portal de Pacientes, Notificaciones y Google Calendar (pendiente — Hitos 3.7 a 3.10)
+
+Implementa el PRD §4.8 a §4.12. Cambio central: se separa el **contacto** (quien escribe o usa la web) del **paciente** (quien se atiende), porque el celular no identifica a un paciente y un contacto puede sacar turnos para otras personas (PRD §4.10).
+
+```prisma
+enum Sex {
+  F
+  M
+  X // Como figura en el DNI argentino
+}
+
+enum BookingSource {
+  WHATSAPP
+  WEB
+  CRM
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  SENT
+  FAILED
+}
+
+/// Quien se comunica con la clínica. No es un dato de identidad del paciente.
+model Contact {
+  id            String         @id @default(uuid())
+  clinicId      String
+  clinic        Clinic         @relation(fields: [clinicId], references: [id])
+  phoneNumber   String?        // WhatsApp (E.164)
+  email         String?        // Web (verificado con código)
+  displayName   String?        // Nombre de perfil de WhatsApp o el que indique; no se usa para identificar
+  // Captación y pipeline del lead (se mueven desde Patient)
+  utmSource     String?
+  utmCampaign   String?
+  leadScore     Int            @default(0)
+  currentStage  PipelineStage  @default(NUEVO_LEAD)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  conversations Conversation[]
+  patients      ContactPatient[]
+  bookings      Appointment[]  @relation("BookedBy")
+
+  @@unique([clinicId, phoneNumber])
+  @@unique([clinicId, email])
+}
+
+/// Pacientes que un contacto validó o registró (ej. un padre y sus hijos).
+model ContactPatient {
+  contactId    String
+  contact      Contact  @relation(fields: [contactId], references: [id])
+  patientId    String
+  patient      Patient  @relation(fields: [patientId], references: [id])
+  registeredBy Boolean  @default(false) // true si este contacto lo registró (puede editar sus datos)
+  lastVerifiedAt DateTime                // Última validación con nombre, apellido, DNI y sexo
+  @@id([contactId, patientId])
+}
+
+model ClinicSite {
+  id          String   @id @default(uuid())
+  clinicId    String   @unique
+  clinic      Clinic   @relation(fields: [clinicId], references: [id])
+  published   Boolean  @default(false)
+  logoUrl     String?  // Archivo subido (almacenamiento de archivos, spec 06)
+  welcomeText String?
+  showPrices  Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+/// Código de un solo uso para que un contacto ingrese a la web con su email.
+model ContactAccessCode {
+  id        String    @id @default(uuid())
+  contactId String
+  contact   Contact   @relation(fields: [contactId], references: [id])
+  codeHash  String    // Guardado con hash
+  expiresAt DateTime  // 10 minutos
+  attempts  Int       @default(0) // Bloqueo tras 5 intentos fallidos
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+/// Link de registro enviado por WhatsApp cuando los datos no coinciden con ningún paciente.
+model RegistrationLink {
+  id             String    @id @default(uuid())
+  clinicId       String
+  clinic         Clinic    @relation(fields: [clinicId], references: [id])
+  tokenHash      String    @unique
+  contactId      String    // Contacto que lo pidió: el paciente registrado queda asociado a él
+  conversationId String?
+  expiresAt      DateTime  // 48 horas
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+}
+
+model Notification {
+  id            String              @id @default(uuid())
+  clinicId      String
+  contactId     String?
+  patientId     String?
+  appointmentId String?
+  channel       NotificationChannel
+  recipient     String              // Email o celular al que se envió
+  template      String              // "bienvenida", "turno_reservado", "turno_cancelado"…
+  status        NotificationStatus
+  error         String?
+  sentAt        DateTime            @default(now())
+}
+
+model DoctorCalendarConnection {
+  id                    String        @id @default(uuid())
+  doctorId              String        @unique
+  doctor                DoctorProfile @relation(fields: [doctorId], references: [id])
+  googleAccountEmail    String
+  calendarId            String        // Calendario elegido por el médico
+  refreshTokenEncrypted String        // Cifrado en reposo; nunca se expone al cliente
+  status                String        @default("ACTIVE") // ACTIVE | REVOKED | ERROR
+  updatedAt             DateTime      @updatedAt
+}
+```
+
+Cambios en modelos existentes:
+
+| Modelo | Cambio | Motivo |
+| :--- | :--- | :--- |
+| `Patient` | `sex Sex?` (obligatorio para registrarse) | Identidad = nombre, apellido, DNI y sexo |
+| `Patient` | `@@unique([clinicId, dni])` | Un DNI se registra una sola vez por clínica |
+| `Patient` | se quita `@@unique([clinicId, phoneNumber])`; `phoneNumber` pasa a opcional | El celular no identifica al paciente; un menor puede no tenerlo |
+| `Patient` | `registeredAt DateTime?`, `birthDate DateTime?`, `healthInsurancePlan String?` | Datos del registro (el plan se resuelve contra la tabla de coberturas, spec 03 §3) |
+| `Patient` | `utmSource`, `utmCampaign`, `leadScore`, `currentStage` pasan a `Contact` | La captación y el pipeline son del que escribe; el paciente puede existir sin haber sido un lead |
+| `Conversation` | `patientId` → `contactId` | La conversación es con el contacto, que puede hablar por varios pacientes |
+| `Appointment` | `bookedByContactId String?` (relación `BookedBy`) | Quién sacó el turno (`null` si lo creó el CRM) |
+| `Appointment` | `source BookingSource` | Canal por el que se reservó |
+| `Appointment` | `googleEventId String?` | Evento creado en el calendario del médico |
+| `Clinic` | `morningEndsAt String @default("13:00")`, `site ClinicSite?` | Corte mañana/tarde y página web |
+| `AvailabilitySchedule` | varias filas por médico, sede y día; validación de no superposición | Varias franjas por día (PRD §4.8) |
+| `DoctorProfile` | `calendarConnection DoctorCalendarConnection?` | Google Calendar conectado |
+
+Impacto en lo ya construido (Hitos 2 y 3):
+- **Pipeline y Marketing** pasan a leer `Contact` (etapa, canal, campaña); cada tarjeta muestra al contacto y, si existen, los pacientes asociados y el próximo turno.
+- **Inbox, Simulador y webhook** crean y buscan `Contact` por celular en lugar de `Patient`.
+- **Migración de datos:** cada `Patient` actual genera un `Contact` con su celular, su etapa y su atribución, un `ContactPatient` (`registeredBy = true`) y sus conversaciones pasan al contacto.

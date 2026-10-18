@@ -100,7 +100,7 @@ Objetivo: poder vender LUCIA a varias clínicas, cada una aislada y con una o m�
 **Alcance**
 - **Panel de plataforma** (`PLATFORM_ADMIN`): listado de clínicas con métricas agregadas; alta de clínica (nombre, CUIT, slug, primera sede y primer Administrador con contraseña inicial); suspender y reactivar.
 - **Usuarios de la clínica** (Administrador): alta, edición y desactivación de usuarios de todos los roles; contraseña inicial con cambio obligatorio en el primer ingreso; cambio de contraseña para todos los usuarios.
-- **Ingreso**: email + contraseña con selección de clínica cuando coinciden varias cuentas; link propio por clínica (`/c/<slug>`); bloqueo de clínicas suspendidas.
+- **Ingreso**: email + contraseña con selección de clínica cuando coinciden varias cuentas; link de ingreso del equipo por clínica (`/c/<slug>/equipo`; `/c/<slug>` queda para la página pública del Hito 3.8); bloqueo de clínicas suspendidas.
 - **Sedes**: ABM de sedes en Configuración; horarios de cada médico por sede y día, con consultorio; turnos con sede; filtro por sede en Agenda, Pipeline y Marketing.
 - **LUCIA**: pregunta la sede, busca turnos por sede e informa la dirección de la sede del turno (spec 04 §1.3).
 - **Migración** de los datos existentes a una sede inicial por clínica, y **seed** con dos clínicas (una con dos sedes) y un médico con cuenta en ambas.
@@ -112,6 +112,71 @@ Objetivo: poder vender LUCIA a varias clínicas, cada una aislada y con una o m�
 4. LUCIA ofrece turnos de la sede elegida y nunca un horario de un médico en una sede donde ese día no atiende.
 5. La plataforma no puede abrir pacientes, conversaciones ni historias clínicas de ninguna clínica.
 6. Las pruebas de los Hitos 1 a 3.5 siguen pasando, adaptadas a sedes.
+
+#### Hito 3.7: Agenda y Pacientes en el CRM
+Objetivo: completar la operación diaria de recepción y de los médicos dentro del CRM (PRD §4.8).
+
+**Alcance**
+- Varias franjas horarias por día y por sede para cada médico, editables por el Administrador y por el propio médico, sin superposición.
+- Vistas de agenda Día / Semana / Mes / Año con filtros por médico y sede; agenda para Secretaría sin motivo de consulta.
+- Alta y edición manual de pacientes desde la sección Pacientes (Secretaría y Administración), con los campos del registro web (incluido el sexo) y DNI único por clínica.
+- Turnos manuales desde la agenda (crear, reprogramar, cancelar) con el servicio único de turnos (spec 04 §6.3) y `source = CRM`.
+
+**Criterios de aceptación**
+1. Un médico con franjas 9–13 y 15–19 el mismo día recibe ofertas de turno en ambas y nunca entre 13 y 15.
+2. Las cuatro vistas muestran los mismos turnos para un mismo médico y período; un clic en un día de Mes o Año abre ese día.
+3. Secretaría no ve el motivo de consulta en ninguna vista.
+4. Un paciente dado de alta manualmente puede luego ser validado por WhatsApp o en la web con nombre, apellido, DNI y sexo.
+
+#### Hito 3.8: Portal Web de la Clínica
+Objetivo: que cada clínica tenga su página pública donde los pacientes se registran y sacan turno (PRD §4.9, §4.11).
+
+**Alcance**
+- **Separación contacto / paciente** (spec 03 §5): modelo `Contact` y `ContactPatient`, conversaciones y pipeline del lado del contacto, y migración de los datos existentes. Pipeline, Inbox, Simulador y Marketing adaptados.
+- Página `/c/<slug>` personalizable desde Configuración → Página web (logo, nombre, bienvenida, sedes, médicos, obras sociales, mostrar u ocultar precios, publicar).
+- Ingreso del contacto con código por email; registro de pacientes (uno mismo u otra persona) con nombre, apellido, DNI y sexo; edición de los pacientes que el contacto registró; consulta, cancelación y reprogramación de los turnos que sacó.
+- Reserva web para un paciente validado con sus cuatro datos, con preferencia de mañana o tarde, usando el servicio único de turnos (`source = WEB`).
+- Email transaccional: bienvenida, código de verificación y avisos de turno con "Agregar a Google Calendar" y `.ics` (spec 04 §6.4).
+- Seguridad del portal público (spec 02 §4.5).
+
+**Criterios de aceptación**
+1. Dos clínicas muestran cada una su logo, nombre y médicos; ninguna muestra datos de la otra.
+2. Un DNI ya registrado no puede registrarse de nuevo; el aviso remite a recepción sin mostrar datos.
+3. Sin el código de verificación correcto no se ven turnos ni datos; tras 5 intentos fallidos el código se bloquea.
+4. Un contacto registra a dos hijos y saca un turno para cada uno; cada turno queda a nombre del hijo y asociado al contacto.
+5. Un turno sacado en la web aparece en el CRM y deja de ofrecerse por WhatsApp; el contacto recibe el email con el botón de Google Calendar y el `.ics` válido.
+6. Pipeline, Inbox, Simulador y Marketing muestran los mismos datos que antes de la migración.
+
+#### Hito 3.9: Identificación del Paciente por WhatsApp
+Objetivo: que LUCIA sólo reserve para pacientes registrados y validados, y que avise por email y WhatsApp (PRD §4.10, §4.11; spec 04 §6.1–6.2).
+
+**Alcance**
+- Herramienta `identify_patient` (nombre, apellido, DNI y sexo), reserva por `patientRef` y reglas nuevas del prompt; `check_availability` por mañana o tarde.
+- Link de registro cuando los datos no coinciden con ningún paciente; al registrarse, email de bienvenida y mensaje de LUCIA para retomar la reserva.
+- Notificación de turno reservado por email y por WhatsApp.
+- Turnos para otras personas: un contacto valida y reserva para varios pacientes en la misma conversación.
+
+**Criterios de aceptación**
+1. Con datos que no coinciden con ningún paciente, LUCIA envía el link de registro y no reserva hasta completarlo; la respuesta es idéntica si el DNI existe con otros datos.
+2. Un celular que cambió de dueño no accede a pacientes ni turnos sin los cuatro datos del paciente.
+3. Un contacto saca turno para sí y para su hijo en la misma conversación, validando a cada uno.
+4. Tras 3 validaciones fallidas en el día, LUCIA deriva a recepción.
+5. Una consulta de información o una urgencia se atiende sin pedir identificación.
+6. Elegida "tarde", ningún turno ofrecido empieza antes del corte de la clínica.
+
+#### Hito 3.10: Google Calendar de los Médicos
+Objetivo: que los turnos confirmados aparezcan en el Google Calendar de cada médico (PRD §4.12; spec 04 §6.5).
+
+**Alcance**
+- Conexión y desconexión de Google Calendar desde la agenda del médico; elección del calendario.
+- Creación, actualización y eliminación de eventos al confirmar, reprogramar o cancelar.
+- Manejo de tokens revocados con aviso al médico.
+- Verificación de la app de OAuth ante Google (trámite que puede llevar semanas: iniciarlo al comenzar el hito).
+
+**Criterios de aceptación**
+1. Confirmar, reprogramar y cancelar un turno se refleja en el calendario del médico en menos de un minuto.
+2. El evento no contiene motivo de consulta ni datos clínicos.
+3. Si el médico revoca el acceso, los turnos siguen funcionando en LUCIA y el médico ve el aviso para reconectar.
 
 #### Hito 4: Pasarela de Cobros Mercado Pago
 - Tabla de coberturas por obra social y plan (PRD §4.4.1, spec 03 §3): ABM en Configuración, herramienta `check_coverage` de LUCIA y monto del turno según la modalidad (sin cargo, copago, seña, particular).
@@ -128,7 +193,8 @@ Objetivo: poder vender LUCIA a varias clínicas, cada una aislada y con una o m�
 - Cola `followup-24h`: Reactivación de pacientes que iniciaron consulta pero no finalizaron la reserva.
 - Cola `reminder-24h`: Recordatorio automático con botones interactivos 24 horas antes del turno.
 
-#### Hito 7 (Opcionales): Historia Clínica Oftalmológica, Recetas y Reseñas
+#### Hito 7 (Opcionales, postergado): Historia Clínica Oftalmológica, Recetas y Reseñas
+- Postergado por decisión del cliente: la carga de historia clínica no entra en los próximos hitos.
 - Ficha clínica oftalmológica (Agudeza Visual OD/OI, PIO, Biomicroscopía, Fondo de Ojo).
 - Emisión de recetas en PDF.
 - Disparo automático de solicitud de reseñas en Google Maps 3 horas después del turno completado.

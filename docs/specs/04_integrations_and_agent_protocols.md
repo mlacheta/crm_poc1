@@ -206,3 +206,46 @@ Meta impone la regla de la **Ventana de 24 horas**:
 - **Worker de Recordatorio Pre-Turno**:
   - Al confirmarse el turno, se programa un Job en `appointment-reminder-queue` calculado exactamente para `startDateTime - 24 horas`.
   - Ejecuta el envío del Template de Confirmación con botones.
+
+---
+
+### 6. Identificación del Paciente, Notificaciones y Google Calendar (Hitos 3.7 a 3.10)
+
+#### 6.1. Cambios en el flujo de LUCIA (PRD §4.10)
+- La conversación es con un **contacto** (el celular que escribe), no con un paciente: el celular no identifica a nadie.
+- La **intención** de cada mensaje la clasifica el LLM (sacar, reprogramar o cancelar turno; información; urgencia; hablar con una persona). En producción se usa un proveedor real; `mock` queda sólo para pruebas.
+- Reglas nuevas del system prompt:
+  - Información general: se responde sin pedir identificación.
+  - Antes de ofrecer turnos: preguntar para quién es el turno y validar a esa persona con `identify_patient` (nombre, apellido, DNI y sexo).
+  - Validado el paciente: preguntar si prefiere mañana o tarde y buscar con `check_availability` en ese rango.
+  - Nunca enumerar los pacientes o turnos asociados al celular, ni leerle al contacto los datos guardados para que los confirme.
+- La regla de urgencias (regla 1) se aplica antes que cualquier identificación.
+
+#### 6.2. Herramientas nuevas o modificadas
+
+| Herramienta | Entrada | Resultado |
+| :--- | :--- | :--- |
+| `identify_patient` (nueva) | `firstName`, `lastName`, `dni`, `sex` (`F`, `M` o `X`) | `VERIFIED` + `patientRef` (referencia opaca, válida sólo en esta conversación) o `NOT_FOUND` + link de registro. La respuesta es la misma si el DNI no existe o si existe con otros datos. |
+| `check_availability` | + `timeOfDay`: `MORNING` \| `AFTERNOON` \| `ANY` | Turnos en ese rango, según el corte de la clínica (`morningEndsAt`) |
+| `hold_appointment_slot` | + `patientRef` (de `identify_patient`); sin `patientName` ni `healthInsurance` | Reserva para ese paciente; registra `bookedByContactId` y `source = WHATSAPP`. Rechaza un `patientRef` que no fue validado en esta conversación. |
+
+- Un contacto puede validar a varios pacientes en la misma conversación (ej. dos hijos) y reservar para cada uno.
+- Una validación vale para la conversación en curso; si pasan 24 h sin actividad, se vuelve a pedir.
+- Tres intentos fallidos de validación por conversación y por día derivan a recepción.
+- Al validar, se crea o actualiza el vínculo `ContactPatient` (`lastVerifiedAt`).
+
+#### 6.3. Servicio único de turnos
+Las herramientas de LUCIA, el portal web y el CRM llaman a las mismas funciones del backend (`src/lib/scheduling.ts` y su sucesor): disponibilidad, reserva serializable, cobertura y cobro, cancelación y reprogramación. Ningún canal implementa reglas de agenda propias; sólo cambia `source` y quién inicia la acción.
+
+#### 6.4. Email transaccional
+- Proveedor de email transaccional con API (ej. Resend o Amazon SES) y dominio propio verificado (SPF/DKIM) para no caer en spam.
+- Plantillas: `bienvenida` (registro completo, "ya podés sacar turno"), `codigo_verificacion`, `turno_reservado` (con link de pago si corresponde), `turno_confirmado`, `turno_reprogramado`, `turno_cancelado`.
+- `turno_reservado` y `turno_confirmado` incluyen el botón **"Agregar a Google Calendar"** (link `https://calendar.google.com/calendar/render?action=TEMPLATE&…` con título, fecha, dirección y detalles) y un adjunto `.ics` para otros calendarios.
+- Cada envío se registra en `Notification` (spec 03 §5). Un fallo de email no cancela la reserva: queda registrado y visible en el CRM.
+
+#### 6.5. Google Calendar de los médicos
+- OAuth 2.0 de Google por médico, con el permiso mínimo para crear y editar eventos (`calendar.events`). El refresh token se guarda cifrado (`DoctorCalendarConnection`).
+- Eventos: se crean al confirmar el turno y se actualizan o eliminan al reprogramarlo o cancelarlo; el id queda en `Appointment.googleEventId`.
+- Si Google rechaza la operación (token revocado, calendario borrado), la conexión pasa a `ERROR`, el turno sigue válido en LUCIA y el médico ve un aviso para reconectar.
+- Contenido del evento: nombre del paciente, sede y consultorio; nunca el motivo de consulta ni datos clínicos (PRD §4.12).
+- Para usar este permiso con médicos de cualquier clínica, Google exige verificar la app de OAuth (pantalla de consentimiento, política de privacidad, dominio): es un trámite que puede llevar semanas.
