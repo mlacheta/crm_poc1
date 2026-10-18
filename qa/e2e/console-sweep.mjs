@@ -15,7 +15,7 @@ try {
   for (const p of ["/login", "/c/centro-demo/equipo"]) await visit(p);
   await login(page, "admin@lucia.local");
   await page.waitForURL("**/pipeline");
-  for (const p of ["/pipeline", "/inbox", "/simulador", "/agenda", "/pacientes", "/marketing", "/admin", "/admin/usuarios", "/admin/sedes/nueva", "/cuenta/clave"]) await visit(p);
+  for (const p of ["/cuenta/clave", "/pipeline", "/inbox", "/simulador", "/agenda", "/pacientes", "/marketing", "/admin", "/admin/usuarios", "/admin/sedes/nueva"]) await visit(p);
   await logout(page);
   await login(page, "plataforma@lucia.local");
   await page.waitForURL("**/plataforma");
