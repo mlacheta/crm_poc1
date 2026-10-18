@@ -124,12 +124,12 @@ export function createLuciaTools(ctx: AgentContext) {
           }),
           prisma.patient.update({ where: { id: ctx.patientId }, data: { currentStage: "PENDIENTE_PAGO" } }),
         ]);
-        // TODO(Hito 4): crear la Preference de Mercado Pago y devolver el link real (init_point).
+        // TODO(Hito 11): crear la Preference de Mercado Pago y devolver el link real (init_point).
         return {
           ok: true,
           amount: formatARS(amount),
           paymentLink: null,
-          note: "La integración con Mercado Pago se habilita en el Hito 4: decile al paciente que recepción le enviará el link de pago en breve y que el turno queda retenido 15 minutos.",
+          note: "La integración con Mercado Pago todavía no está habilitada: decile al paciente que recepción le enviará el link de pago en breve y que el turno queda retenido 15 minutos.",
         };
       },
     }),

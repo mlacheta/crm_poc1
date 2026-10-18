@@ -1,5 +1,5 @@
 // Cliente mínimo de Meta WhatsApp Cloud API (envío de texto dentro de la ventana de 24 h).
-// Los templates fuera de ventana (recordatorios, reactivación) llegan en el Hito 6.
+// Los templates fuera de ventana (recordatorios, reactivación) llegan en el Hito 10.
 
 const GRAPH_VERSION = process.env.WHATSAPP_GRAPH_VERSION || "v23.0";
 

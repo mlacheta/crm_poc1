@@ -307,7 +307,7 @@ Usuario: `laura.mendez@lucia.local`, salvo indicación.
 
 **MED-PAC-04 · Paciente sin historia clínica**
 - Pasos: abrir Sofía Gómez.
-- Esperado: "Sin evoluciones cargadas. La carga se habilita en el Hito 7."
+- Esperado: "Sin evoluciones cargadas. La carga de historia clínica todavía no está disponible."
 
 **MED-PAC-05 · Historia de otro especialista (Rossi)**
 - Pasos: como Rossi, abrir Jorge Fernández.

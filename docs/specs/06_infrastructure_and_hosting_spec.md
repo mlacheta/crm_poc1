@@ -59,9 +59,9 @@ flowchart TD
 | **Cobros de Turnos** | **Mercado Pago** | Sin costos de apertura ni costos de mantenimiento fijos mensuales. Sólo retiene comisión porcentual cuando un paciente efectivamente paga. | **$0 / mes** |
 | **Facturación Fiscal** | **ARCA (ex-AFIP)** | El acceso al Web Service WSFEv1 de ARCA es un servicio público gratuito del estado argentino. | **$0 / mes** |
 | **Túnel para Desarrollo Local** | **Cloudflare Tunnels / ngrok** | Exposición de `localhost:3000` con HTTPS para recibir webhooks de Meta y Mercado Pago en desarrollo. | **$0 / mes** |
-| **Email transaccional** (Hito 3.8) | **Resend / Amazon SES** | Plan gratuito con límite mensual de envíos; requiere un dominio propio verificado (SPF/DKIM). Verificar el límite vigente al contratar. | **$0 / mes** (hasta el límite) |
-| **Almacenamiento de archivos** (logos, Hito 3.8) | **Vercel Blob / Supabase Storage** | Plan gratuito suficiente para logos de clínicas. | **$0 / mes** |
-| **Google Calendar API** (Hito 3.10) | **Google Cloud** | Sin costo por uso en estos volúmenes; requiere un proyecto de Google Cloud y verificar la app de OAuth. | **$0 / mes** |
+| **Email transaccional** (Hito 7) | **Resend / Amazon SES** | Plan gratuito con límite mensual de envíos; requiere un dominio propio verificado (SPF/DKIM). Verificar el límite vigente al contratar. | **$0 / mes** (hasta el límite) |
+| **Almacenamiento de archivos** (logos, Hito 7) | **Vercel Blob / Supabase Storage** | Plan gratuito suficiente para logos de clínicas. | **$0 / mes** |
+| **Google Calendar API** (Hito 9) | **Google Cloud** | Sin costo por uso en estos volúmenes; requiere un proyecto de Google Cloud y verificar la app de OAuth. | **$0 / mes** |
 | **TOTAL MENSUAL FIJO** | — | — | **$0.00 USD** |
 
 ---

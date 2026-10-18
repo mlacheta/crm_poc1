@@ -86,7 +86,7 @@ REGLAS PRIMORDIALES:
   },
   {
     "name": "check_coverage",
-    "description": "(Hito 4) Resuelve cómo se cobra la consulta según la obra social y el plan del paciente (tabla de coberturas, PRD §4.4.1) y la guarda en el paciente.",
+    "description": "(Hito 11) Resuelve cómo se cobra la consulta según la obra social y el plan del paciente (tabla de coberturas, PRD §4.4.1) y la guarda en el paciente.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -117,9 +117,9 @@ REGLAS PRIMORDIALES:
 - **Anti doble-booking**: la reserva corre en una transacción `Serializable` de PostgreSQL que recalcula los turnos libres; de dos pedidos simultáneos del mismo turno sólo uno lo obtiene. Una reserva nueva libera las tentativas previas del mismo paciente.
 - **`escalate_to_human`** pausa a LUCIA sin vencimiento (hasta que recepción la reanude) y deja un mensaje de sistema en el chat.
 - **Proveedor de LLM** configurable (`LLM_PROVIDER`: `mock` | `google` | `anthropic` | `openai`) vía Vercel AI SDK. `mock` es un modelo de reglas para pruebas sin API key que ejecuta las mismas herramientas.
-- **Mercado Pago** (Hito 4): por ahora `generate_mercadopago_payment` registra el pago `PENDING` y no devuelve link.
-- **Sedes** (Hito 3.6, PRD §4.7): si la clínica tiene más de una sede, LUCIA pregunta cuál prefiere el paciente. `check_availability` acepta un `locationId` opcional (sin él, busca en todas) y cada turno devuelto informa su sede. `hold_appointment_slot` toma la sede del horario del médico. `get_clinic_info` con `UBICACION` lista las sedes. El prompt incluye las sedes y los horarios de cada médico por sede.
-- **Coberturas** (Hito 4): `hold_appointment_slot` aplicará la regla de cobertura del paciente, guardará el snapshot en el turno y devolverá el siguiente paso: `PAY` (con monto), `CONFIRMED` (sin cargo) o `PENDING_AUTHORIZATION`. `generate_mercadopago_payment` cobrará el monto del snapshot. `get_clinic_info` con `OBRAS_SOCIALES` leerá la tabla de coberturas en lugar de la lista fija actual.
+- **Mercado Pago** (Hito 11): por ahora `generate_mercadopago_payment` registra el pago `PENDING` y no devuelve link. Desde el Hito 6 y hasta el 11, LUCIA deja de usarla: el turno se confirma al reservarse y se cobra en la clínica.
+- **Sedes** (Hito 4, PRD §4.7): si la clínica tiene más de una sede, LUCIA pregunta cuál prefiere el paciente. `check_availability` acepta un `locationId` opcional (sin él, busca en todas) y cada turno devuelto informa su sede. `hold_appointment_slot` toma la sede del horario del médico. `get_clinic_info` con `UBICACION` lista las sedes. El prompt incluye las sedes y los horarios de cada médico por sede.
+- **Coberturas** (Hito 11): `hold_appointment_slot` aplicará la regla de cobertura del paciente, guardará el snapshot en el turno y devolverá el siguiente paso: `PAY` (con monto), `CONFIRMED` (sin cargo) o `PENDING_AUTHORIZATION`. `generate_mercadopago_payment` cobrará el monto del snapshot. `get_clinic_info` con `OBRAS_SOCIALES` leerá la tabla de coberturas en lugar de la lista fija actual.
 
 ---
 
@@ -209,7 +209,7 @@ Meta impone la regla de la **Ventana de 24 horas**:
 
 ---
 
-### 6. Identificación del Paciente, Notificaciones y Google Calendar (Hitos 3.7 a 3.10)
+### 6. Identificación del Paciente, Notificaciones y Google Calendar (Hitos 5 a 9)
 
 #### 6.1. Cambios en el flujo de LUCIA (PRD §4.10)
 - La conversación es con un **contacto** (el celular que escribe), no con un paciente: el celular no identifica a nadie.

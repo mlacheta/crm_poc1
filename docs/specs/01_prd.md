@@ -91,6 +91,7 @@ Todos los roles, salvo Plataforma, pertenecen a una única clínica y sólo ven 
 - Filtros por médico, sede/consultorio, canal de origen y rango de fechas.
 
 #### 4.4. Pasarela de Pagos (Mercado Pago)
+- **Etapa actual:** los cobros se implementan después de toda la funcionalidad de operación (Hitos 11 y 12). Hasta entonces, todo turno queda confirmado al reservarse y se cobra en la clínica.
 - Generación automática de `Preference` o link de pago por el monto de la consulta o seña fijada por la clínica.
 - Recepción de Webhooks con validación de estado (`approved`, `rejected`, `in_process`).
 - Al confirmarse el pago:
@@ -194,7 +195,7 @@ Cada clínica tiene una página pública propia en `/c/<slug>`, con su logo y su
 
 **Reserva de turnos en la web**
 - Sólo se reserva para pacientes registrados, validados con nombre, apellido, DNI y sexo (4.10), para uno mismo o para otra persona.
-- Mismo flujo que por WhatsApp: motivo de consulta, sede, preferencia de **mañana o tarde**, turnos disponibles en ese rango, elección y reserva; luego el cobro según la cobertura (PRD §4.4.1, Hito 4).
+- Mismo flujo que por WhatsApp: motivo de consulta, sede, preferencia de **mañana o tarde**, turnos disponibles en ese rango, elección y reserva; luego el cobro según la cobertura (PRD §4.4.1, Hito 11). Hasta entonces el turno queda confirmado al reservarse y se cobra en la clínica.
 - Un único **servicio de turnos** en el backend atiende a la web, a LUCIA (WhatsApp) y al CRM: mismas reglas de disponibilidad, reserva sin doble-booking, cobertura y cobro (spec 02).
 - El contacto ve los turnos que sacó y puede cancelarlos o reprogramarlos según la política de la clínica.
 
@@ -227,7 +228,7 @@ Se distinguen dos figuras:
 
 #### 4.11. Notificaciones al Paciente
 - **Al reservar un turno** (por WhatsApp, web o CRM), el **contacto que lo sacó** recibe la confirmación **por email y por WhatsApp** con fecha, hora, paciente, médico, sede, dirección e indicaciones previas. Si el paciente tiene email propio y distinto, también lo recibe.
-  - Si el turno queda pendiente de pago, el aviso incluye el link de pago y el plazo; la confirmación definitiva sale al acreditarse (Hito 4).
+  - Si el turno queda pendiente de pago, el aviso incluye el link de pago y el plazo; la confirmación definitiva sale al acreditarse (Hito 11). Hasta ese hito, los turnos se confirman al reservarse.
 - El email incluye un botón **"Agregar a Google Calendar"** y un archivo `.ics` adjunto, que funciona también con Apple Calendar y Outlook.
 - Cancelaciones y reprogramaciones también se notifican por email y WhatsApp.
 - Mensajes de WhatsApp fuera de la ventana de 24 h requieren plantillas aprobadas por Meta (spec 04 §2).

@@ -87,7 +87,7 @@ export default async function PacientePage({ params }: PageProps<"/pacientes/[id
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               {patient.medicalRecords.length === 0 && (
-                <p className="text-muted-foreground">Sin evoluciones cargadas. La carga se habilita en el Hito 7.</p>
+                <p className="text-muted-foreground">Sin evoluciones cargadas. La carga de historia clínica todavía no está disponible.</p>
               )}
               {patient.medicalRecords.map((r) => (
                 <article key={r.id} className="space-y-1 border-b pb-4 last:border-b-0 last:pb-0">

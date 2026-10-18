@@ -51,6 +51,6 @@ No son pasos de configuración sino pendientes del producto:
 
 - **Base de producción separada de la demo.** Nunca correr el seed contra ella (borra todo); además el seed carga un Phone Number ID ficticio (`100000000000001`).
 - **IA en plan pago.** El plan gratuito de Gemini no soporta tráfico real (5 pedidos por minuto y errores 503 frecuentes) y Google puede usar esos datos. Con datos de salud: plan pago y, por la **Ley 25.326**, registrar la base de datos ante la AAIP y publicar una política de privacidad.
-- **Hito 4 (Mercado Pago y coberturas):** hoy LUCIA reserva el turno pero el cobro lo gestiona recepción manualmente.
-- **Hito 6 (recordatorios y reactivación):** los mensajes fuera de la ventana de 24 h necesitan **plantillas aprobadas por Meta** (`recordatorio_turno_24h`, `reactivacion_lead_pendiente_24h`, ver spec 04 §2), y una cola para procesar en orden los mensajes seguidos de un mismo paciente.
+- **Cobros (Hito 11, Mercado Pago y coberturas):** hoy LUCIA reserva el turno pero el cobro lo gestiona recepción manualmente.
+- **Hito 10 (recordatorios y reactivación):** los mensajes fuera de la ventana de 24 h necesitan **plantillas aprobadas por Meta** (`recordatorio_turno_24h`, `reactivacion_lead_pendiente_24h`, ver spec 04 §2), y una cola para procesar en orden los mensajes seguidos de un mismo paciente.
 - **Plan Vercel Pro** por el uso comercial.

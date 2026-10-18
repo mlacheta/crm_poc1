@@ -365,7 +365,7 @@ model ReviewRequest {
 
 ---
 
-### 3. Coberturas por Obra Social y Plan (pendiente de implementar — Hito 4)
+### 3. Coberturas por Obra Social y Plan (pendiente de implementar — Hito 11)
 
 Implementa las reglas de cobro del PRD §4.4.1. Se agrega al esquema de la sección 2 cuando se implemente.
 
@@ -426,7 +426,7 @@ Resolución de la regla (en este orden): plan exacto de la obra social → fila 
 
 ---
 
-### 4. Multi-clínica (SaaS) y Sedes (pendiente de implementar — Hito 3.6)
+### 4. Multi-clínica (SaaS) y Sedes (pendiente de implementar — Hito 4)
 
 Implementa el PRD §4.7. Todas las entidades de negocio ya cuelgan de `Clinic` (`clinicId`); estos son los cambios.
 
@@ -483,7 +483,7 @@ Reglas:
 
 ---
 
-### 5. Contactos, Portal de Pacientes, Notificaciones y Google Calendar (pendiente — Hitos 3.7 a 3.10)
+### 5. Contactos, Portal de Pacientes, Notificaciones y Google Calendar (pendiente — Hitos 5 a 9; la separación contacto/paciente es el Hito 5)
 
 Implementa el PRD §4.8 a §4.12. Cambio central: se separa el **contacto** (quien escribe o usa la web) del **paciente** (quien se atiende), porque el celular no identifica a un paciente y un contacto puede sacar turnos para otras personas (PRD §4.10).
 
