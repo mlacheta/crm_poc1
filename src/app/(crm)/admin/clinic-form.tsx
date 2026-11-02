@@ -48,7 +48,7 @@ export function ClinicForm({ values }: { values: ClinicFormValues }) {
         <Separator />
 
         <fieldset className="grid gap-4 sm:grid-cols-2">
-          <legend className="mb-3 font-medium">WhatsApp Cloud API (Meta)</legend>
+          <legend className="mb-3 font-medium">WhatsApp: conexión manual (avanzado)</legend>
           <Field label="Phone Number ID">
             <Input name="whatsappNumberId" defaultValue={values.whatsappNumberId} />
           </Field>

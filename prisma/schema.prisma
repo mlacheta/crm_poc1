@@ -22,23 +22,37 @@ enum Role {
   MARKETING
 }
 
+enum WhatsAppStatus {
+  NOT_CONNECTED
+  CONNECTED
+  ERROR // Token vencido o revocado, número bloqueado: ver whatsappStatusDetail
+  DISCONNECTED // La clínica o Meta quitó el acceso
+}
+
 enum ClinicStatus {
   ACTIVE
   SUSPENDED // Nadie ingresa y LUCIA no responde
 }
 
 model Clinic {
-  id               String       @id @default(uuid())
-  name             String
-  slug             String       @unique // Link de la clínica: /c/<slug>
-  status           ClinicStatus @default(ACTIVE)
-  cuit             String       @unique
-  address          String // Dirección fiscal / principal; las sedes tienen la suya
-  phone            String
-  whatsappNumberId String?      @unique // ID de número de teléfono en Meta Cloud API
-  wabaId           String? // WhatsApp Business Account ID
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id                    String         @id @default(uuid())
+  name                  String
+  slug                  String         @unique // Link de la clínica: /c/<slug>
+  status                ClinicStatus   @default(ACTIVE)
+  cuit                  String         @unique
+  address               String // Dirección fiscal / principal; las sedes tienen la suya
+  phone                 String
+  whatsappNumberId      String?        @unique // ID de número de teléfono en Meta Cloud API
+  wabaId                String? // WhatsApp Business Account ID
+  // Conexión por Embedded Signup (spec 04 §2.1). Sin token propio se usa WHATSAPP_ACCESS_TOKEN (conexión manual).
+  whatsappAccessToken   String? // Token de negocio cifrado (AES-256-GCM)
+  whatsappStatus        WhatsAppStatus @default(NOT_CONNECTED)
+  whatsappStatusDetail  String?
+  whatsappDisplayPhone  String? // Número visible, ej. "+54 11 4000-1001"
+  whatsappQualityRating String? // GREEN | YELLOW | RED
+  whatsappConnectedAt   DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 
   users         User[]
   locations     Location[]

@@ -24,6 +24,7 @@
 | 6 | Agenda y turnos en el CRM | Especificado |
 | 7 | Portal web de la clínica | Especificado |
 | 8 | Identificación del paciente por WhatsApp | Especificado |
+| 8.5 | WhatsApp multi-clínica: Embedded Signup | **Código hecho** (2026-11-01); falta la aprobación de Meta |
 | 9 | Google Calendar de los médicos | Especificado |
 | 10 | Recordatorios y reactivación | Especificado |
 | 11 | Cobros: Mercado Pago y coberturas | Especificado |
@@ -40,11 +41,13 @@ flowchart LR
     H7 --> H8[8 · Identificación por WhatsApp]
     H6 --> H9[9 · Google Calendar médicos]
     H8 --> H10[10 · Recordatorios y reactivación]
+    H4 --> H85[8.5 · WhatsApp multi-clínica]
+    H85 --> H10
     H10 --> H11[11 · Cobros: Mercado Pago y coberturas]
     H11 --> H12[12 · Facturación ARCA]
 ```
 
-El Hito 9 depende sólo del 6 y puede hacerse en paralelo con el 7 y el 8.
+El Hito 9 depende sólo del 6 y puede hacerse en paralelo con el 7 y el 8. El Hito 8.5 depende sólo del 4 (multi-clínica): se construyó antes que el 5 porque los trámites de Meta tardan semanas y bloquean la salida a clientes reales.
 
 ### Equivalencia con la numeración anterior
 
@@ -206,6 +209,28 @@ Objetivo: que LUCIA sólo reserve para pacientes registrados y validados, y que 
 4. Tras 3 validaciones fallidas en el día, LUCIA deriva a recepción.
 5. Una consulta de información o una urgencia se atiende sin pedir identificación.
 6. Elegida "tarde", ningún turno ofrecido empieza antes del corte de la clínica.
+
+#### Hito 8.5: WhatsApp Multi-clínica (Embedded Signup)
+Objetivo: que cada clínica conecte su propio número de WhatsApp a LUCIA con un botón, sin tocar Meta for Developers ni copiar tokens (PRD §4.2; spec 04 §2.1).
+
+**Alcance**
+- Esquema: token cifrado, estado, número visible y calidad por clínica (spec 03).
+- Botón **Conectar WhatsApp** en Configuración (Admin): Embedded Signup, canje del código, suscripción al WABA, registro del número, alta de las plantillas requeridas. Desconexión y reconexión.
+- Envío con el token de cada clínica; la conexión manual (token global) sigue funcionando.
+- Webhook único con eventos de cuenta (acceso quitado, calidad del número) y estado "Requiere reconexión" cuando el token vence.
+- Estado de WhatsApp por clínica en el panel de plataforma.
+- **Trámites de Meta** (fuera del código, a iniciar de inmediato): verificación de empresa, App Review (`whatsapp_business_messaging`, `whatsapp_business_management`), Tech Provider, Embedded Signup y medio de pago. Detalle en spec 04 §2.1 y `docs/whatsapp-produccion.md`.
+
+**Criterios de aceptación**
+1. Un Admin conecta su número desde Configuración y, sin más pasos, un mensaje a ese número aparece en su Inbox con la respuesta de LUCIA.
+2. Dos clínicas con números distintos reciben y envían cada una por su propio número y token; ninguna ve mensajes de la otra.
+3. El token no se guarda en claro ni se muestra en pantalla; un token alterado no se puede leer.
+4. Si Meta revoca el acceso o el token vence, la clínica queda en "Desconectada" o "Requiere reconexión" (en Configuración y en plataforma) y el envío falla con un aviso claro, sin afectar a otras clínicas.
+5. Un número ya conectado a otra clínica no se puede conectar.
+6. Desconectar borra el token y deja de recibir mensajes de ese número.
+7. Las plantillas `recordatorio_turno_24h` y `reactivacion_lead_pendiente_24h` quedan creadas en el WABA de la clínica.
+
+**Validación pendiente:** los pasos contra Meta (criterios 1, 4 y 7) sólo se pueden probar de punta a punta con la app de Meta creada y Embedded Signup configurado; `npm run qa:whatsapp` cubre cifrado, selección de token y eventos de cuenta sin llamar a Meta.
 
 #### Hito 9: Google Calendar de los Médicos
 Objetivo: que los turnos confirmados aparezcan en el Google Calendar de cada médico (PRD §4.12; spec 04 §6.5).

@@ -81,6 +81,12 @@ model Clinic {
   phone           String
   whatsappNumberId String?         // ID de número de teléfono en Meta Cloud API
   wabaId          String?          // WhatsApp Business Account ID
+  whatsappAccessToken   String?  // Hito 8.5: token de negocio cifrado
+  whatsappStatus        WhatsAppStatus @default(NOT_CONNECTED)
+  whatsappStatusDetail  String?
+  whatsappDisplayPhone  String?
+  whatsappQualityRating String?
+  whatsappConnectedAt   DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -469,6 +475,7 @@ Cambios en modelos existentes:
 | `Clinic` | `status ClinicStatus @default(ACTIVE)` | Suspender una clínica sin borrarla |
 | `Clinic` | `whatsappNumberId` pasa a `@unique` | El webhook asigna cada mensaje a una sola clínica |
 | `Clinic` | `locations Location[]` | Sus sedes (al menos una) |
+| `Clinic` | `whatsappAccessToken`, `whatsappStatus` (`WhatsAppStatus`: `NOT_CONNECTED`, `CONNECTED`, `ERROR`, `DISCONNECTED`), `whatsappStatusDetail`, `whatsappDisplayPhone`, `whatsappQualityRating`, `whatsappConnectedAt` | Hito 8.5: cada clínica conecta su número por Embedded Signup con su propio token (cifrado) |
 | `User` | `clinicId String?` (nullable) | `PLATFORM_ADMIN` no pertenece a ninguna clínica; el resto de los roles la requiere (validado en la app) |
 | `User` | `email` deja de ser `@unique` → `@@unique([clinicId, email])` | La misma persona puede tener cuentas independientes en varias clínicas |
 | `User` | `mustChangePassword Boolean @default(false)` | Contraseña inicial que el usuario debe cambiar al ingresar |

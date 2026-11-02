@@ -8,6 +8,7 @@ import { requireClinicUser } from "@/lib/auth/dal";
 import { DAY_NAMES, formatARS } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { ClinicForm } from "./clinic-form";
+import { WhatsAppConnect } from "./whatsapp-connect";
 
 export default async function AdminPage() {
   const user = await requireClinicUser(["ADMIN"]);
@@ -138,6 +139,28 @@ export default async function AdminPage() {
             Administrar usuarios
           </Link>
         </CardHeader>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>WhatsApp</CardTitle>
+          <CardDescription>Conectá el número de la clínica: LUCIA atiende los mensajes que lleguen a él. Se hace con tu cuenta de Facebook Business y tarda un par de minutos.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <WhatsAppConnect
+            appId={process.env.NEXT_PUBLIC_META_APP_ID ?? null}
+            configId={process.env.NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID ?? null}
+            graphVersion={process.env.WHATSAPP_GRAPH_VERSION || "v23.0"}
+            summary={{
+              status: clinic.whatsappStatus,
+              detail: clinic.whatsappStatusDetail,
+              displayPhone: clinic.whatsappDisplayPhone,
+              quality: clinic.whatsappQualityRating,
+              connectedAt: clinic.whatsappConnectedAt?.toISOString() ?? null,
+              manual: !!clinic.whatsappNumberId && !clinic.whatsappAccessToken,
+            }}
+          />
+        </CardContent>
       </Card>
 
       <Card>

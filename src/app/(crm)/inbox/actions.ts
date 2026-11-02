@@ -6,14 +6,14 @@ import { requireClinicUser } from "@/lib/auth/dal";
 import { HUMAN_TAKEOVER_MINUTES } from "@/lib/conversations";
 import { addMinutes } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp/client";
+import { sendWhatsAppText, WHATSAPP_CLINIC_SELECT } from "@/lib/whatsapp/client";
 
 async function authorizeConversation(conversationId: string) {
   const user = await requireClinicUser(["ADMIN", "SECRETARIA"]);
   const id = z.uuid().parse(conversationId);
   const conv = await prisma.conversation.findFirst({
     where: { id, patient: { clinicId: user.clinicId } },
-    select: { id: true, channel: true, patient: { select: { phoneNumber: true, clinic: { select: { whatsappNumberId: true } } } } },
+    select: { id: true, channel: true, patient: { select: { phoneNumber: true, clinic: { select: WHATSAPP_CLINIC_SELECT } } } },
   });
   if (!conv) throw new Error("Conversación no encontrada.");
   return conv;
@@ -45,7 +45,7 @@ export async function sendHumanMessage(conversationId: string, _prev: SendState,
 
   const delivery =
     conv.channel === "WHATSAPP"
-      ? await sendWhatsAppText({ phoneNumberId: conv.patient.clinic.whatsappNumberId, to: conv.patient.phoneNumber, text: text.data })
+      ? await sendWhatsAppText({ clinic: conv.patient.clinic, to: conv.patient.phoneNumber, text: text.data })
       : null;
 
   const now = new Date();

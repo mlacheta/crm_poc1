@@ -1,5 +1,25 @@
 # Conectar el número de WhatsApp de la clínica (producción)
 
+> **Dos modos.** (A) *Multi-clínica con Embedded Signup* (Hito 8.5): LUCIA tiene **una sola app de Meta** y cada clínica conecta su número con el botón **Conectar WhatsApp** de Configuración. Es el modo para un SaaS. (B) *Conexión manual*: una clínica sola con su propia app, token y Phone Number ID; es el resto de esta guía.
+
+## Modo A: preparar la plataforma una vez (Embedded Signup)
+
+El código está listo; faltan trámites en Meta, que conviene iniciar ya porque tardan semanas:
+1. **Verificación de empresa** del negocio que opera LUCIA (CUIT y documentación) en Meta Business.
+2. App tipo *Business* en Meta for Developers con los productos **WhatsApp** e **Inicio de sesión para empresas**. Solicitar **Tech Provider** y **App Review** con acceso avanzado a `whatsapp_business_messaging` y `whatsapp_business_management` (video de demostración, política de privacidad y términos de uso).
+3. Crear la **configuración de Embedded Signup** (Inicio de sesión para empresas → Configuraciones) y anotar su ID. Agregar el dominio de LUCIA a los dominios permitidos del SDK de JavaScript.
+4. Webhook único de la app: URL `https://<dominio>/api/webhooks/whatsapp`, token de verificación propio y suscripción a los campos `messages`, `account_update` y `phone_number_quality_update`.
+5. Variables en Vercel: `NEXT_PUBLIC_META_APP_ID`, `NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` y `WHATSAPP_TOKEN_ENCRYPTION_KEY` (32+ caracteres; si se cambia, las clínicas deben reconectar). Redeploy.
+6. Medio de pago o línea de crédito en Meta para el consumo de mensajes con plantilla (definir si lo paga cada clínica o la plataforma).
+
+Hasta que Meta apruebe la app, el flujo sólo funciona para los administradores y testers de la app: sirve para probar de punta a punta con un número propio.
+
+Cada clínica, con LUCIA ya aprobada: Configuración → **Conectar WhatsApp** y seguir la ventana de Meta. No hay que copiar ningún ID ni token.
+
+---
+
+## Modo B: conexión manual (una clínica, app propia)
+
 El código ya recibe y envía mensajes por la WhatsApp Cloud API (webhook en `src/app/api/webhooks/whatsapp/route.ts`, cliente en `src/lib/whatsapp/`). Pasar a producción es sobre todo configuración del lado de Meta, más unas variables en LUCIA.
 
 > Las pantallas de Meta cambian seguido: los nombres de menú de esta guía son orientativos.

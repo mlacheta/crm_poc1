@@ -17,6 +17,8 @@
     "db:studio": "prisma studio",
     "typecheck": "next typegen && tsc --noEmit",
     "chat": "tsx scripts/chat.ts",
+    "qa:agenda": "tsx scripts/qa-motor-agenda.ts",
+    "qa:whatsapp": "tsx scripts/qa-whatsapp-multiclinica.ts",
     "demo:db": "node scripts/remote-db.mjs",
     "test:e2e": "node qa/e2e/run-all.mjs"
   },

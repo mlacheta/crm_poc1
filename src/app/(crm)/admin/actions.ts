@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireClinicUser } from "@/lib/auth/dal";
 import { DAY_NAMES } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { connectClinicWhatsApp, disconnectClinicWhatsApp } from "@/lib/whatsapp/connection";
 import { Prisma } from "@/generated/prisma/client";
 
 export type FormState = { error?: string; ok?: string } | undefined;
@@ -162,4 +163,32 @@ export async function createDoctor(_prev: FormState, formData: FormData): Promis
   }
   revalidatePath("/admin", "layout");
   redirect("/admin");
+}
+
+// ---------------------------------------------------------------- WhatsApp (Embedded Signup)
+
+const ConnectWhatsAppSchema = z.object({
+  code: z.string().trim().min(1),
+  phoneNumberId: z.string().trim().regex(/^\d+$/),
+  wabaId: z.string().trim().regex(/^\d+$/),
+});
+
+/** Cierra el Embedded Signup que la clínica hizo en la ventana de Meta (spec 04 §2.1). */
+export async function connectWhatsApp(input: z.input<typeof ConnectWhatsAppSchema>): Promise<FormState> {
+  const user = await requireClinicUser(["ADMIN"]);
+  const parsed = ConnectWhatsAppSchema.safeParse(input);
+  if (!parsed.success) return { error: "Meta no devolvió los datos del número. Probá de nuevo." };
+  const result = await connectClinicWhatsApp(user.clinicId, parsed.data);
+  if (!result.ok) return { error: result.error };
+  revalidatePath("/admin");
+  revalidatePath("/plataforma");
+  return { ok: `WhatsApp conectado${result.displayPhone ? ` (${result.displayPhone})` : ""}. LUCIA ya atiende este número.` };
+}
+
+export async function disconnectWhatsApp(): Promise<FormState> {
+  const user = await requireClinicUser(["ADMIN"]);
+  await disconnectClinicWhatsApp(user.clinicId);
+  revalidatePath("/admin");
+  revalidatePath("/plataforma");
+  return { ok: "WhatsApp desconectado. LUCIA dejó de recibir y enviar mensajes por este número." };
 }

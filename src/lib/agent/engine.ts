@@ -4,7 +4,7 @@ import type { ConversationChannel, Prisma } from "@/generated/prisma/client";
 import { isLuciaPaused } from "@/lib/conversations";
 import { prisma } from "@/lib/prisma";
 import { SIMULATOR_UTM_SOURCE } from "@/lib/simulator";
-import { sendWhatsAppText } from "@/lib/whatsapp/client";
+import { sendWhatsAppText, WHATSAPP_CLINIC_SELECT } from "@/lib/whatsapp/client";
 import { runLucia, type AgentPayload } from "./run";
 
 export type InboundMessage = {
@@ -121,8 +121,8 @@ async function deliverLuciaReply({
   let metaMessageId: string | undefined;
 
   if (channel === "WHATSAPP") {
-    const clinic = await prisma.clinic.findUniqueOrThrow({ where: { id: clinicId }, select: { whatsappNumberId: true } });
-    const result = await sendWhatsAppText({ phoneNumberId: clinic.whatsappNumberId, to, text });
+    const clinic = await prisma.clinic.findUniqueOrThrow({ where: { id: clinicId }, select: WHATSAPP_CLINIC_SELECT });
+    const result = await sendWhatsAppText({ clinic, to, text });
     if (result.sent) {
       metaMessageId = result.messageId;
       delivery = "enviado por WhatsApp";

@@ -67,3 +67,20 @@ export function parseInboundMessages(payload: unknown): ParsedInbound[] {
     }),
   );
 }
+
+export type AccountEvent = { wabaId: string; field: "account_update" | "phone_number_quality_update"; event: string };
+
+const ACCOUNT_FIELDS = new Set(["account_update", "phone_number_quality_update"]);
+
+/** Eventos de la cuenta (no mensajes): el cliente quitó el acceso, cambió la calidad del número, etc. `entry.id` es el WABA. */
+export function parseAccountEvents(payload: unknown): AccountEvent[] {
+  const p = payload as { object?: string; entry?: { id?: string; changes?: { field?: string; value?: { event?: string } }[] }[] };
+  if (p?.object !== "whatsapp_business_account") return [];
+  return (p.entry ?? []).flatMap((entry) =>
+    (entry.changes ?? []).flatMap((change) =>
+      entry.id && change.field && ACCOUNT_FIELDS.has(change.field)
+        ? [{ wabaId: entry.id, field: change.field as AccountEvent["field"], event: change.value?.event ?? "" }]
+        : [],
+    ),
+  );
+}

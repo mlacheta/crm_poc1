@@ -139,6 +139,40 @@ Meta impone la regla de la **Ventana de 24 horas**:
   > *"Hola {{1}}, ¿cómo estás? Notamos que no terminamos de coordinar tu consulta oftalmológica. ¿Te gustaría ver los horarios disponibles para esta semana?"*
   > *Botones interactivos: [Ver Horarios] [Hablar con Secretaría]*
 
+#### 2.1 Conexión de cada clínica: Embedded Signup (Hito 8.5)
+
+LUCIA es una **única app de Meta** (tipo Business, Tech Provider) y cada clínica conecta su propio número a ella; la clínica nunca crea una app ni copia tokens.
+
+**Flujo de conexión** (Configuración → WhatsApp, rol Admin):
+1. El botón **Conectar WhatsApp** carga el SDK de Facebook y llama a `FB.login` con `config_id` (configuración de Embedded Signup), `response_type: code` y `override_default_response_type`.
+2. La clínica inicia sesión con su Business Manager, elige o crea su cuenta de WhatsApp Business (WABA), verifica el número y concede acceso a LUCIA.
+3. Meta entrega al navegador, por `postMessage` (evento `WA_EMBEDDED_SIGNUP` / `FINISH`), el `phone_number_id` y el `waba_id`; y por el callback de `FB.login`, un `code` de un solo uso. Llegan en cualquier orden: se envían al servidor cuando están los tres.
+4. El servidor (`connectClinicWhatsApp`):
+   1. rechaza si el `phone_number_id` ya pertenece a otra clínica;
+   2. canjea el `code` por el token de negocio (`GET /oauth/access_token` con App ID y App Secret);
+   3. suscribe la app al WABA (`POST /{waba}/subscribed_apps`);
+   4. registra el número (`POST /{phone}/register` con un PIN de 6 dígitos generado; si ya estaba registrado se ignora);
+   5. lee el número visible y la calidad (`GET /{phone}?fields=display_phone_number,quality_rating`);
+   6. guarda en `Clinic` el `whatsappNumberId`, `wabaId`, el token **cifrado** (AES-256-GCM, clave `WHATSAPP_TOKEN_ENCRYPTION_KEY`), el estado `CONNECTED` y los datos del número;
+   7. crea en el WABA las plantillas de §2 (`POST /{waba}/message_templates`, categoría `UTILITY`, idioma `es_AR`), en mejor esfuerzo: si ya existen se ignora el error.
+   Si falla un paso crítico (1 a 3 o 5) no se modifica la clínica y se muestra el motivo.
+5. **Desconectar** quita la suscripción del WABA (mejor esfuerzo) y borra token, WABA, Phone Number ID y datos del número; la clínica queda `DISCONNECTED`.
+
+**Envío.** Cada mensaje saliente usa el token de la clínica (`resolveAccessToken`); sin token propio cae en `WHATSAPP_ACCESS_TOKEN` (conexión manual de una clínica sola, ver `docs/whatsapp-produccion.md`). Una respuesta 401 o error 190 de Meta marca la clínica `ERROR` con el aviso "Reconectá el número", visible en Configuración y en el panel de plataforma.
+
+**Webhook único.** Meta llama siempre a `/api/webhooks/whatsapp` (una sola URL, App Secret y verify token de la app). Los mensajes se asignan a la clínica por `metadata.phone_number_id`. Eventos de cuenta (el `entry.id` es el WABA):
+
+| Campo | Evento | Efecto |
+| :--- | :--- | :--- |
+| `account_update` | `PARTNER_REMOVED`, `ACCOUNT_DELETED`, `DISABLED_UPDATE`, `PARTNER_APP_UNINSTALLED` | Clínica `DISCONNECTED` con el motivo |
+| `phone_number_quality_update` | cualquiera | Se relee la calidad del número y se guarda |
+
+**Estados** (`WhatsAppStatus`): `NOT_CONNECTED` → `CONNECTED` ⇄ `ERROR` (token vencido) → `DISCONNECTED`. Una clínica con Phone Number ID cargado a mano y sin token se muestra como "Manual".
+
+**Variables de entorno de la plataforma:** `NEXT_PUBLIC_META_APP_ID`, `NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_TOKEN_ENCRYPTION_KEY`, `WHATSAPP_GRAPH_VERSION`.
+
+**Trámites de Meta** (no son código; bloquean salir a clientes reales, por eso conviene iniciarlos ya): verificación de la empresa de LUCIA (CUIT y documentación); App Review con acceso avanzado a `whatsapp_business_messaging` y `whatsapp_business_management` (video de demostración, política de privacidad, términos de uso); alta como **Tech Provider**; configuración de Embedded Signup y línea de crédito o medio de pago para el consumo. Mientras no estén aprobados la app opera sólo con sus administradores y testers: sirve para probar el flujo completo, no para clientes.
+
 ---
 
 ### 3. Pasarela de Pagos (Mercado Pago)

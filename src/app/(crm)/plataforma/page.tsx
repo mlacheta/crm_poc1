@@ -23,6 +23,9 @@ export default async function PlatformPage() {
       cuit: true,
       status: true,
       whatsappNumberId: true,
+      whatsappStatus: true,
+      whatsappStatusDetail: true,
+      whatsappDisplayPhone: true,
       _count: {
         select: {
           locations: { where: { isActive: true } },
@@ -79,7 +82,19 @@ export default async function PlatformPage() {
                 <TableCell className="text-right tabular-nums">{c._count.users}</TableCell>
                 <TableCell className="text-right tabular-nums">{c._count.patients}</TableCell>
                 <TableCell className="text-right tabular-nums">{conversations.at(i)}</TableCell>
-                <TableCell>{c.whatsappNumberId ? "Conectado" : "—"}</TableCell>
+                <TableCell>
+                  {c.whatsappStatus === "NOT_CONNECTED" && !c.whatsappNumberId ? (
+                    "—"
+                  ) : (
+                    <div className="space-y-0.5">
+                      <Badge variant={c.whatsappStatus === "CONNECTED" || (c.whatsappStatus === "NOT_CONNECTED" && c.whatsappNumberId) ? "success" : c.whatsappStatus === "ERROR" ? "destructive" : "warning"}>
+                        {c.whatsappStatus === "CONNECTED" ? "Conectado" : c.whatsappStatus === "ERROR" ? "Requiere reconexión" : c.whatsappStatus === "DISCONNECTED" ? "Desconectado" : "Manual"}
+                      </Badge>
+                      {c.whatsappDisplayPhone && <p className="text-xs text-muted-foreground">{c.whatsappDisplayPhone}</p>}
+                      {c.whatsappStatusDetail && <p className="max-w-56 text-xs text-muted-foreground">{c.whatsappStatusDetail}</p>}
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell>
                   <form action={setClinicStatus.bind(null, c.id, c.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE")}>
                     <Button type="submit" size="sm" variant={c.status === "ACTIVE" ? "destructive" : "outline"}>

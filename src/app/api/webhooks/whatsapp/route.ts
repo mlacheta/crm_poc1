@@ -6,7 +6,8 @@ import type { Prisma } from "@/generated/prisma/client";
 import { handleInboundMessage } from "@/lib/agent/engine";
 import { prisma } from "@/lib/prisma";
 import { fromWaId } from "@/lib/whatsapp/client";
-import { isValidSignature, parseInboundMessages } from "@/lib/whatsapp/webhook";
+import { applyAccountEvent } from "@/lib/whatsapp/connection";
+import { isValidSignature, parseAccountEvents, parseInboundMessages } from "@/lib/whatsapp/webhook";
 
 export const maxDuration = 60;
 
@@ -42,7 +43,15 @@ export async function POST(req: NextRequest) {
   }
 
   const inbound = parseInboundMessages(payload);
+  const accountEvents = parseAccountEvents(payload);
   after(async () => {
+    for (const e of accountEvents) {
+      try {
+        await applyAccountEvent(e);
+      } catch (err) {
+        console.error(`[WhatsApp] Error procesando el evento ${e.field}/${e.event}:`, err);
+      }
+    }
     for (const m of inbound) {
       try {
         const clinic = await prisma.clinic.findFirst({ where: { whatsappNumberId: m.phoneNumberId }, select: { id: true } });
